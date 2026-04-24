@@ -1,0 +1,3 @@
+# Wildcard : chaque sous-domaine charge index.html
+# Le slug de la commune est extrait côté JS depuis window.location.hostname
+/*    /index.html    200
