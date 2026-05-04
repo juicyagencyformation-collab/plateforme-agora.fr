@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agora — Super Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --teal:   #2C5F6E;
+    --teal2:  #1a3d47;
+    --gold:   #E2C97E;
+    --bg:     #0d1b1e;
+    --bg2:    #122229;
+    --bg3:    #1a3040;
+    --text:   #e8f0f2;
+    --muted:  #7a9aa5;
+    --border: #1e3a45;
+    --green:  #4caf7d;
+    --red:    #e05c5c;
+    --orange: #e09a3a;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ── AUTH ── */
+  #auth-screen {
+    display: flex; align-items: center; justify-content: center; min-height: 100vh;
+    background: radial-gradient(ellipse at 30% 40%, #1a3d4788 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 70%, #0d252a88 0%, transparent 60%), var(--bg);
+  }
+  .auth-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 48px 40px; width: 380px; text-align: center; }
+  .auth-logo { font-size: 13px; font-weight: 700; letter-spacing: 4px; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
+  .auth-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+  .auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; font-family: 'DM Mono', monospace; }
+  .auth-box input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 16px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 14px;
+    margin-bottom: 12px; outline: none; transition: border-color .2s;
+  }
+  .auth-box input:focus { border-color: var(--teal); }
+  .btn-auth {
+    width: 100%; background: var(--teal); color: var(--gold); border: none; border-radius: var(--radius);
+    padding: 13px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; letter-spacing: 1px; transition: background .2s;
+  }
+  .btn-auth:hover { background: var(--teal2); }
+  #auth-error { color: var(--red); font-size: 13px; margin-top: 12px; font-family: 'DM Mono', monospace; display: none; }
+
+  /* ── LAYOUT ── */
+  #app { display: none; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 60px; background: var(--bg2); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 12px; }
+  .topbar-logo { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
+  .topbar-sep { color: var(--border); font-size: 20px; }
+  .topbar-title { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .user-chip { background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 5px 14px; font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); }
+  .btn-logout { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius); padding: 6px 14px; font-size: 12px; cursor: pointer; font-family: 'Syne', sans-serif; transition: all .2s; }
+  .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+  .main { padding: 32px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── KPIs ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+  .kpi { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; position: relative; overflow: hidden; }
+  .kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--gold); opacity: .4; }
+  .kpi-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+  .kpi-value { font-size: 32px; font-weight: 800; line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 6px; }
+
+  /* ── PANEL ── */
+  .panel { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .panel-title { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); }
+  .panel-count { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); background: var(--bg3); padding: 3px 10px; border-radius: 20px; }
+  .panel-head-right { display: flex; align-items: center; gap: 10px; }
+
+  /* ── SEARCH ── */
+  .search-wrap { padding: 10px 20px; border-bottom: 1px solid var(--border); }
+  .search-input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px;
+    outline: none; transition: border-color .2s;
+  }
+  .search-input:focus { border-color: var(--teal); }
+
+  /* ── COMMUNES TABLE ── */
+  .commune-row {
+    display: grid;
+    grid-template-columns: minmax(200px,2fr) 70px 90px 100px 90px 90px;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    transition: background .15s;
+    gap: 10px;
+  }
+  .commune-row:last-child { border-bottom: none; }
+  .commune-row:hover { background: #ffffff06; }
+
+  /* Actions wrapper communes */
+  .commune-actions { display: contents; } /* transparent sur desktop — les enfants restent dans la grid */
+
+  .commune-name { font-size: 14px; font-weight: 700; color: var(--text); }
+
+  /* Slug inline */
+  .slug-inline-wrap { display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+  .slug-inline {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 4px;
+    padding: 3px 7px; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted);
+    width: 130px; outline: none; transition: border-color .2s, color .2s;
+  }
+  .slug-inline:focus { border-color: var(--gold); color: var(--text); }
+  .slug-save-btn {
+    background: var(--teal); border: none; border-radius: 4px; color: var(--gold);
+    font-size: 11px; padding: 3px 7px; cursor: pointer; opacity: 0;
+    transition: opacity .2s; pointer-events: none;
+  }
+  .slug-inline-wrap:focus-within .slug-save-btn { opacity: 1; pointer-events: auto; }
+  .slug-domain { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--border); white-space: nowrap; }
+
+  .stat-num { font-size: 16px; font-weight: 700; text-align: center; }
+  .stat-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); text-align: center; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; text-align: center; white-space: nowrap; }
+  .badge-on  { background: #4caf7d22; color: var(--green); border: 1px solid #4caf7d44; }
+  .badge-off { background: #e05c5c22; color: var(--red);   border: 1px solid #e05c5c44; }
+
+  .btn-sm {
+    background: transparent; border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 9px; font-size: 11px; font-family: 'DM Mono', monospace;
+    cursor: pointer; transition: all .2s; color: var(--muted); white-space: nowrap;
+  }
+  .btn-sm:hover { border-color: var(--teal); color: var(--text); }
+  .btn-sm.gold { color: var(--gold); }
+  .btn-sm.gold:hover { border-color: var(--gold); background: #E2C97E0a; }
+  .btn-sm.on:hover  { border-color: var(--red);   color: var(--red); }
+  .btn-sm.off:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── ADMINS ── */
+  .admin-row {
+    display: grid; grid-template-columns: 1fr 130px 100px;
+    align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border);
+    gap: 12px; transition: background .15s;
+  }
+  .admin-row:last-child { border-bottom: none; }
+  .admin-row:hover { background: #ffffff05; }
+  .admin-name { font-size: 14px; font-weight: 600; }
+  .admin-commune { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 2px; }
+  .role-badge { font-size: 10px; font-family: 'DM Mono', monospace; padding: 3px 8px; border-radius: 4px; text-align: center; }
+  .role-super { background: #E2C97E22; color: var(--gold); border: 1px solid #E2C97E44; }
+  .role-admin { background: #2C5F6E33; color: #7ec8d8;     border: 1px solid #2C5F6E66; }
+  .btn-promote { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 10px; font-family: 'DM Mono', monospace; cursor: pointer; color: var(--muted); transition: all .2s; white-space: nowrap; }
+  .btn-promote:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── INVITE BTN ── */
+  .btn-invite {
+    background: var(--teal); color: var(--gold); border: none; border-radius: 6px;
+    padding: 6px 14px; font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 700;
+    cursor: pointer; transition: background .2s; white-space: nowrap;
+  }
+  .btn-invite:hover { background: var(--teal2); }
+
+  /* ── ACTIVITÉ ── */
+  .activity-row { display: flex; align-items: flex-start; gap: 14px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-row:hover { background: #ffffff05; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .dot-signal { background: var(--orange); }
+  .dot-mur    { background: var(--teal); }
+  .dot-user   { background: var(--green); }
+  .activity-content { flex: 1; }
+  .activity-title { font-size: 13px; line-height: 1.4; }
+  .activity-meta { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); margin-top: 3px; display: flex; gap: 10px; }
+
+  /* ── LOADING / TOAST ── */
+  .loading { text-align: center; padding: 40px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 13px; }
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 20px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--text); opacity: 0; transform: translateY(10px); transition: all .3s; z-index: 9999; pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── MODAL (commune + invite) ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: #000000bb; z-index: 500;
+    align-items: flex-start; justify-content: center; overflow-y: auto; padding: 40px 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    width: 100%; max-width: 700px; padding: 32px; position: relative;
+    animation: slideIn .2s ease;
+  }
+  .modal.narrow { max-width: 460px; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  .modal-close { position: absolute; top: 20px; right: 20px; background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: 6px; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+  .modal-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .modal-sub { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 24px; }
+  .modal-section { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-field label { display: block; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 5px; }
+  .modal-field input, .modal-field select, .modal-field textarea {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px;
+    outline: none; transition: border-color .2s; resize: vertical;
+  }
+  .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { border-color: var(--teal); }
+  .modal-field.full { grid-column: 1 / -1; }
+
+  /* Contact links */
+  .contact-link { display: flex; align-items: center; gap: 8px; font-size: 13px; font-family: 'DM Mono', monospace; color: var(--teal); text-decoration: none; margin-top: 6px; padding: 8px 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; transition: all .2s; }
+  .contact-link:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* QR */
+  .qr-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); }
+  .qr-url { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); word-break: break-all; text-align: center; }
+  .btn-qr-dl { background: var(--teal); color: var(--gold); border: none; border-radius: 6px; padding: 8px 20px; font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; }
+  .btn-qr-dl:hover { background: var(--teal2); }
+
+  /* Modal actions */
+  .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); border-radius: var(--radius); padding: 10px 20px; font-family: 'Syne', sans-serif; font-size: 13px; cursor: pointer; transition: all .2s; }
+  .btn-cancel:hover { border-color: var(--red); color: var(--red); }
+  .btn-save { background: var(--teal); color: var(--gold); border: none; border-radius: var(--radius); padding: 10px 24px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-save:hover { background: var(--teal2); }
+
+  /* Invite info box */
+  .info-box { display:none; } /* conservé pour compatibilité, non utilisé */
+
+  /* Steps liste */
+  .steps-list { display: flex; flex-direction: column; gap: 0; margin-top: 4px; }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--teal);
+    color: var(--gold);
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .step-body { flex: 1; }
+
+  .step-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .step-desc strong { color: var(--text); }
+  .step-desc code { color: var(--gold); background: var(--bg3); padding: 1px 5px; border-radius: 3px; }
+
+  .step-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 10px 0;
+  }
+
+  .step-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .field-key {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    color: var(--gold);
+    min-width: 100px;
+  }
+
+  .field-val { color: var(--muted); }
+
+  .step-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--teal);
+    text-decoration: none;
+    border-bottom: 1px solid var(--teal);
+    transition: color .2s;
+  }
+  .step-link:hover { color: var(--gold); border-color: var(--gold); }
+
+  /* ── PIPELINE BADGES ── */
+  .badge-prospect  { background: #7c3aed22; color: #a78bfa;      border: 1px solid #7c3aed44; }
+  .badge-contacte  { background: #2563eb22; color: #60a5fa;      border: 1px solid #2563eb44; }
+  .badge-demo      { background: #e09a3a22; color: var(--orange); border: 1px solid #e09a3a44; }
+  .badge-signe     { background: #e2c97e22; color: var(--gold);  border: 1px solid #e2c97e44; }
+  .badge-perdu     { background: #e05c5c22; color: var(--red);   border: 1px solid #e05c5c44; }
+
+  /* ── PROSPECT ROW ── */
+  .prospect-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 140px;
+    align-items: center;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    transition: background .15s;
+  }
+  .prospect-row:last-child { border-bottom: none; }
+  .prospect-row:hover { background: #ffffff05; }
+
+  .btn-prospect {
+    background: linear-gradient(135deg, #7c3aed22, #2C5F6E22);
+    border: 1px solid #7c3aed66;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    color: #a78bfa;
+    transition: all .2s;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .btn-prospect:hover { background: #7c3aed33; border-color: #a78bfa; }
+
+  /* ── MODAL EMAIL ── */
+  .modal-field-full label { display: block; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 5px; margin-top: 14px; }
+  .modal-field-full input, .modal-field-full textarea {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px;
+    outline: none; transition: border-color .2s; resize: vertical;
+  }
+  .modal-field-full input:focus, .modal-field-full textarea:focus { border-color: var(--teal); }
+
+  /* ══ RESPONSIVE ══ */
+
+  @media (max-width: 900px) {
+    .main { padding: 20px 16px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+    .modal-grid { grid-template-columns: 1fr; }
+    .commune-row { grid-template-columns: 1fr 60px 80px 80px; gap: 8px; }
+    .commune-row > :nth-child(4), .commune-row > :nth-child(5) { display: none; }
+    .prospect-row { grid-template-columns: 1fr 100px; }
+    .prospect-row > :nth-child(3) { display: none; }
+    .admin-row { grid-template-columns: 1fr 90px; }
+    .topbar { padding: 0 16px; }
+    .topbar-sep, .topbar-title { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    /* Auth */
+    .auth-box { width: calc(100% - 32px); margin: 16px; padding: 32px 24px; border-radius: 12px; }
+
+    /* Topbar */
+    .topbar { padding: 0 12px; height: 52px; }
+    .user-chip { display: none; }
+    .btn-logout { padding: 5px 10px; font-size: 11px; }
+
+    /* Main */
+    .main { padding: 14px 12px; }
+
+    /* KPIs 2 colonnes compactes */
+    .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+    .kpi { padding: 14px 16px; }
+    .kpi-value { font-size: 24px; }
+    .kpi-sub { display: none; }
+
+    /* Panel */
+    .panel { margin-bottom: 14px; border-radius: 8px; }
+    .panel-head { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+    .panel-title { font-size: 11px; }
+    .panel-head-right { gap: 6px; }
+    .btn-invite { padding: 5px 10px; font-size: 11px; }
+
+    /* Search */
+    .search-wrap { padding: 8px 12px; }
+
+    /* Actions communes en flex sur mobile */
+    .commune-actions { display: flex !important; gap: 6px; width: 100%; }
+    .commune-actions .btn-sm { flex: 1; text-align: center; padding: 9px 4px; font-size: 11px; }
+
+    /* Commune row : flex vertical sur mobile */
+    .commune-row {
+      display: flex !important;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 12px 14px;
+    }
+    .commune-row > * { display: block !important; width: 100%; }
+    .commune-row > div:first-child { width: 100%; }
+    /* Réafficher les colonnes cachées sur tablette */
+    .commune-row > :nth-child(4),
+    .commune-row > :nth-child(5) { display: flex !important; width: auto; }
+
+    /* Ligne d'actions pleine largeur */
+    .commune-row > button,
+    .commune-row > :last-child { width: 100%; text-align: center; }
+
+    /* Slug */
+    .slug-inline { width: 160px; }
+    .slug-domain { display: none; }
+
+    /* Admin row */
+    .admin-row { grid-template-columns: 1fr 80px; gap: 8px; padding: 10px 14px; }
+    .admin-row > :nth-child(3) { display: none; }
+
+    /* Activité */
+    .activity-row { padding: 10px 14px; gap: 10px; }
+    .activity-title { font-size: 12px; }
+    .activity-meta { flex-wrap: wrap; gap: 4px; font-size: 10px; }
+
+    /* Prospect */
+    .prospect-row { grid-template-columns: 1fr; gap: 6px; padding: 12px 14px; }
+    .prospect-row > :nth-child(2), .prospect-row > :nth-child(3) { display: none; }
+
+    /* Modal — bottom sheet */
+    .modal-overlay { padding: 0; align-items: flex-end; }
+    .modal {
+      border-radius: 16px 16px 0 0;
+      max-width: 100%;
+      padding: 24px 16px 32px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal.narrow { max-width: 100%; }
+    .modal-title { font-size: 17px; padding-right: 40px; }
+    .modal-grid { grid-template-columns: 1fr; }
+    .modal-actions { flex-direction: column-reverse; gap: 8px; }
+    .btn-save, .btn-cancel { width: 100%; text-align: center; padding: 13px; }
+
+    /* QR */
+    .qr-wrap { padding: 14px; }
+
+    /* Email composer */
+    .email-composer { padding: 14px; margin-bottom: 0; }
+    .email-field-row { grid-template-columns: 1fr; }
+    .email-actions { flex-direction: column; align-items: stretch; gap: 8px; }
+    .btn-gmail { width: 100%; text-align: center; padding: 12px; justify-content: center; }
+    .email-hint { font-size: 10px; }
+    .template-tabs { gap: 4px; }
+    .t-tab { padding: 5px 8px; font-size: 10px; }
+
+    /* Drafts table — masquer colonnes secondaires */
+    .drafts-table th:nth-child(2), .drafts-table td:nth-child(2),
+    .drafts-table th:nth-child(3), .drafts-table td:nth-child(3) { display: none; }
+    .drafts-table td, .drafts-table th { padding: 8px 12px; }
+
+    /* Steps */
+    .step { padding: 12px 0; gap: 12px; }
+    .step-num { width: 24px; height: 24px; font-size: 12px; flex-shrink: 0; }
+    .step-title { font-size: 13px; }
+    .step-desc { font-size: 11px; }
+
+    /* Toast pleine largeur */
+    #toast { left: 12px; right: 12px; bottom: 16px; font-size: 12px; padding: 10px 14px; }
+  }
+  /* ── EMAILS & DRAFTS ── */
+  --gmail: #ea4335;
+  .btn-gmail { background: rgba(234,67,53,.08); border: 1px solid rgba(234,67,53,.3); color: var(--gmail); border-radius: 6px; padding: 6px 14px; font-size: 12px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; transition: all .2s; }
+  .btn-gmail:hover:not(:disabled) { background: rgba(234,67,53,.15); }
+  .btn-gmail:disabled { opacity: .5; cursor: not-allowed; }
+  .template-tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .t-tab { padding: 5px 12px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; transition: all .15s; font-family: 'DM Mono', monospace; }
+  .t-tab.active { background: var(--bg3); color: var(--text); border-color: var(--teal); }
+  .t-tab:hover:not(.active) { border-color: var(--muted); color: var(--text); }
+  .email-composer { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; }
+  .email-composer label { display: block; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--muted); margin-bottom: 5px; }
+  .email-field { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color .2s; }
+  .email-field:focus { border-color: var(--teal); }
+  .email-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .email-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .email-hint { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .spin { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; display: inline-block; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .drafts-empty { text-align: center; padding: 24px; color: var(--muted); font-family: 'DM Mono', monospace; font-size: 12px; }
+  .drafts-table { width: 100%; border-collapse: collapse; }
+  .drafts-table th { padding: 8px 16px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .drafts-table td { padding: 10px 16px; font-size: 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .drafts-table tr:last-child td { border-bottom: none; }
+  .drafts-table tr:hover td { background: #ffffff05; }
+  .btn-open-draft { font-size: 10px; font-family: 'DM Mono', monospace; padding: 3px 10px; border-radius: 4px; background: rgba(234,67,53,.08); border: 1px solid rgba(234,67,53,.3); color: var(--gmail); cursor: pointer; text-decoration: none; }
+  .btn-open-draft:hover { background: rgba(234,67,53,.15); }
+  .panel-email-nav { display: flex; align-items: center; gap: 8px; }
+  .gmail-badge { display: flex; align-items: center; gap: 5px; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--gmail); background: rgba(234,67,53,.08); border: 1px solid rgba(234,67,53,.3); border-radius: 20px; padding: 3px 10px; }
+  .gmail-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gmail); }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">Agora</div>
+    <div class="auth-title">Super Admin</div>
+    <div class="auth-sub">plateforme-agora.fr</div>
+    <input type="email" id="email" placeholder="Email" autocomplete="email">
+    <input type="password" id="password" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="btn-auth" onclick="login()">Connexion</button>
+    <div id="auth-error">Email ou mot de passe incorrect</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <span class="topbar-logo">Agora</span>
+      <span class="topbar-sep">·</span>
+      <span class="topbar-title">super_admin</span>
+    </div>
+    <div class="topbar-right">
+      <span class="user-chip" id="user-email">—</span>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Communes</div>
+        <div class="kpi-value" id="kpi-communes">—</div>
+        <div class="kpi-sub" id="kpi-communes-sub">dont — actives</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Utilisateurs</div>
+        <div class="kpi-value" id="kpi-users">—</div>
+        <div class="kpi-sub">tous rôles confondus</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Signalements</div>
+        <div class="kpi-value" id="kpi-signals">—</div>
+        <div class="kpi-sub">total plateforme</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Posts mur</div>
+        <div class="kpi-value" id="kpi-posts">—</div>
+        <div class="kpi-sub">total plateforme</div>
+      </div>
+    </div>
+
+    <!-- COMMUNES (pleine largeur) -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Communes</span>
+        <span class="panel-count" id="communes-count">…</span>
+      </div>
+      <div class="search-wrap">
+        <input class="search-input" type="text" placeholder="🔍 Rechercher une commune…" oninput="filterCommunes(this.value)">
+      </div>
+      <div id="communes-list"><div class="loading">Chargement…</div></div>
+    </div>
+
+    <!-- ADMINS (pleine largeur) -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Admins communaux</span>
+        <div class="panel-head-right">
+          <span class="panel-count" id="admins-count">…</span>
+          <button class="btn-invite" onclick="openInviteModal()">+ Inviter un admin</button>
+        </div>
+      </div>
+      <div id="admins-list"><div class="loading">Chargement…</div></div>
+    </div>
+
+    <!-- ACTIVITÉ -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Activité récente</span>
+        <span class="panel-count" id="activity-count">…</span>
+      </div>
+      <div id="activity-list"><div class="loading">Chargement…</div></div>
+    </div>
+
+    <!-- PIPELINE PROSPECTS -->
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">📬 Pipeline Prospects</span>
+        <span class="panel-count" id="prospects-count">…</span>
+      </div>
+      <div id="prospects-list"><div class="loading">Chargement…</div></div>
+    </div>
+
+    <!-- EMAILS & DRAFTS -->
+    <div class="panel" id="panel-emails">
+      <div class="panel-head">
+        <span class="panel-title">✉️ Emails &amp; Drafts</span>
+        <div class="panel-email-nav">
+          <div class="gmail-badge"><div class="gmail-dot"></div>Gmail</div>
+        </div>
+      </div>
+
+      <!-- Composer -->
+      <div class="email-composer">
+        <div style="font-size:13px;font-weight:700;font-family:'Syne',sans-serif;margin-bottom:14px;">Templates rapides</div>
+        <div class="template-tabs" id="template-tabs">
+          <button class="t-tab active" onclick="setTemplate('bienvenue',this)">Bienvenue</button>
+          <button class="t-tab" onclick="setTemplate('facture',this)">Facture</button>
+          <button class="t-tab" onclick="setTemplate('relance',this)">Relance renouvellement</button>
+          <button class="t-tab" onclick="setTemplate('onboarding',this)">Onboarding admin</button>
+          <button class="t-tab" onclick="setTemplate('custom',this)">Libre</button>
+        </div>
+
+        <div class="email-field-row">
+          <div>
+            <label>Commune</label>
+            <select id="email-commune-sel" class="email-field" onchange="prefillEmailRecipient()">
+              <option value="">— Choisir une commune —</option>
+            </select>
+          </div>
+          <div>
+            <label>Email destinataire</label>
+            <input type="email" id="email-to" class="email-field" placeholder="mairie@commune.fr">
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label>Objet</label>
+          <input type="text" id="email-subject" class="email-field" placeholder="Objet de l'email">
+        </div>
+
+        <div style="margin-bottom:4px;">
+          <label>Corps du message</label>
+          <textarea id="email-body" class="email-field" rows="8" style="resize:vertical;line-height:1.6;" placeholder="Votre message…"></textarea>
+        </div>
+
+        <div class="email-actions">
+          <button class="btn-gmail" id="btn-send-draft" onclick="createEmailDraft()">✉ Créer le brouillon Gmail</button>
+          <span class="email-hint">→ S'ouvre dans Gmail pour envoi final</span>
+        </div>
+      </div>
+
+      <!-- Drafts récents -->
+      <div class="panel-head" style="border-top:1px solid var(--border);">
+        <span class="panel-title" style="font-size:12px;">Brouillons récents</span>
+        <button class="btn-sm" onclick="loadDrafts()" style="font-size:11px;">↻ Actualiser</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="drafts-table">
+          <thead><tr><th>Objet</th><th>Destinataire</th><th>Date</th><th></th></tr></thead>
+          <tbody id="drafts-table"><tr><td colspan="4" class="drafts-empty">Cliquez sur Actualiser pour charger les brouillons</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL COMMUNE -->
+<div id="modal-commune-overlay" class="modal-overlay" onclick="handleOverlayClick(event,'modal-commune-overlay')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-commune-overlay')">✕</button>
+    <div class="modal-title" id="modal-commune-name">—</div>
+    <div class="modal-sub" id="modal-commune-slug">—</div>
+
+    <div class="modal-section">Contact</div>
+    <div id="modal-contact-links"></div>
+
+    <div class="modal-section">QR Code de la plateforme</div>
+    <div class="qr-wrap">
+      <div id="qr-canvas"></div>
+      <div class="qr-url" id="qr-url-label">—</div>
+      <button class="btn-qr-dl" onclick="downloadQR()">⬇ Télécharger le QR Code</button>
+    </div>
+
+    <div class="modal-section">Modifier la fiche</div>
+    <div class="modal-grid">
+      <div class="modal-field">
+        <label>Nom de la commune</label>
+        <input type="text" id="f-nom" placeholder="Nom officiel">
+      </div>
+      <div class="modal-field">
+        <label>Slug (URL)</label>
+        <input type="text" id="f-slug" placeholder="nom-commune">
+      </div>
+      <div class="modal-field">
+        <label>Email mairie</label>
+        <input type="email" id="f-email-mairie" placeholder="mairie@commune.fr">
+      </div>
+      <div class="modal-field">
+        <label>Téléphone</label>
+        <input type="tel" id="f-telephone" placeholder="03 22 …">
+      </div>
+      <div class="modal-field">
+        <label>Email contact (plateforme)</label>
+        <input type="email" id="f-email-contact" placeholder="contact@commune.fr">
+      </div>
+      <div class="modal-field">
+        <label>Email propriétaire</label>
+        <input type="email" id="f-owner-email" placeholder="owner@domain.fr">
+      </div>
+      <div class="modal-field">
+        <label>Adresse</label>
+        <input type="text" id="f-adresse" placeholder="1 rue de la Mairie…">
+      </div>
+      <div class="modal-field">
+        <label>Plan / Offre</label>
+        <select id="f-plan">
+          <option value="hameau">Hameau (&lt;500 hab) — 590€/an</option>
+          <option value="village">Village (500–2000) — 990€/an</option>
+          <option value="bourg">Bourg (2000–5000) — 1 790€/an</option>
+          <option value="ville">Ville (&gt;5000) — sur devis</option>
+          <option value="fondateur">Offre Fondateur — 390€/an</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Pipeline</label>
+        <select id="f-pipeline">
+          <option value="prospect">Prospect</option>
+          <option value="contacte">Contacté</option>
+          <option value="demo">Démo planifiée</option>
+          <option value="signe">Signé</option>
+          <option value="actif">Actif</option>
+          <option value="perdu">Perdu</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>Date début abonnement</label>
+        <input type="date" id="f-date-debut">
+      </div>
+      <div class="modal-field full">
+        <label>Notes internes</label>
+        <textarea id="f-notes" rows="3" placeholder="Remarques, contacts, historique…"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-commune-overlay')">Annuler</button>
+      <button class="btn-save" onclick="saveCommune()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INVITATION ADMIN -->
+<div id="modal-invite-overlay" class="modal-overlay" onclick="handleOverlayClick(event,'modal-invite-overlay')">
+  <div class="modal narrow">
+    <button class="modal-close" onclick="closeModal('modal-invite-overlay')">✕</button>
+    <div class="modal-title">Ajouter un admin</div>
+    <div class="modal-sub">Procédure manuelle via Supabase Dashboard</div>
+
+    <div class="steps-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Inviter l'élu par email</div>
+          <div class="step-desc">Supabase Dashboard → <strong>Authentication → Users → Invite user</strong><br>Entre son email → il reçoit un lien pour créer son mot de passe.</div>
+          <a class="step-link" href="https://supabase.com/dashboard/project/jofeldziwqdswfhqqrcv/auth/users" target="_blank">→ Ouvrir Authentication</a>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Attendre qu'il crée son compte</div>
+          <div class="step-desc">Il clique sur le lien, choisit son mot de passe. Sa ligne apparaît alors dans la table <code>profiles</code>.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Configurer son profil</div>
+          <div class="step-desc">Supabase Dashboard → <strong>Table Editor → profiles</strong><br>Trouve sa ligne, puis renseigne :</div>
+          <div class="step-fields">
+            <div class="step-field"><span class="field-key">role</span><span class="field-val">admin</span></div>
+            <div class="step-field"><span class="field-key">commune_id</span><span class="field-val">id de la commune</span></div>
+            <div class="step-field"><span class="field-key">nom</span><span class="field-val">Prénom Nom</span></div>
+            <div class="step-field"><span class="field-key">pseudo</span><span class="field-val">prenom.nom</span></div>
+          </div>
+          <a class="step-link" href="https://supabase.com/dashboard/project/jofeldziwqdswfhqqrcv/editor" target="_blank">→ Ouvrir Table Editor</a>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">C'est prêt ✓</div>
+          <div class="step-desc">L'élu peut se connecter à la plateforme de sa commune avec son email et mot de passe.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-save" onclick="closeModal('modal-invite-overlay')">Compris</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMAIL PROSPECT -->
+<div id="modal-email-overlay" class="modal-overlay" onclick="handleOverlayClick(event,'modal-email-overlay')">
+  <div class="modal narrow">
+    <button class="modal-close" onclick="closeModal('modal-email-overlay')">✕</button>
+    <div class="modal-title">✉️ Email de prospection</div>
+    <div class="modal-sub" id="modal-email-sub">Prospect froid</div>
+
+    <div class="modal-field-full">
+      <label>Destinataire (email mairie)</label>
+      <input type="email" id="email-to" placeholder="mairie@commune.fr">
+    </div>
+    <div class="modal-field-full">
+      <label>Objet</label>
+      <input type="text" id="email-subject">
+    </div>
+    <div class="modal-field-full">
+      <label>Corps du message</label>
+      <textarea id="email-body" rows="16"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('modal-email-overlay')">Annuler</button>
+      <button class="btn-save" onclick="sendProspectEmail()">📋 Copier le corps + ouvrir Outlook</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://jofeldziwqdswfhqqrcv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvZmVsZHppd3Fkc3dmaHFxcmN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTQ0NzMsImV4cCI6MjA4OTMzMDQ3M30.PqkaS0TdQ_4wiZSX2lJuaPHr1zFyd9jovt9Ucd8IhQc';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser     = null;
+let editingCommuneId = null;
+let allCommunes     = [];
+
+// ── AUTH ──
+async function login() {
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const errEl    = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) { errEl.style.display = 'block'; return; }
+
+  const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
+  if (!profile || profile.role !== 'super_admin') {
+    await sb.auth.signOut();
+    errEl.textContent = 'Accès réservé aux super admins';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  currentUser = data.user;
+  document.getElementById('user-email').textContent = email;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadAll();
+}
+
+async function logout() { await sb.auth.signOut(); location.reload(); }
+document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+// ── LOAD ALL ──
+async function loadAll() {
+  await Promise.all([loadCommunes(), loadAdmins(), loadActivity(), loadKpis(), loadProspects()]);
+}
+
+// ── PROSPECTS PIPELINE ──
+async function loadProspects() {
+  const { data: prospects } = await sb
+    .from('communes')
+    .select('*')
+    .in('statut_prospection', ['Prospect', 'Contacté', 'Démo planifiée'])
+    .order('nom');
+
+  const el = document.getElementById('prospects-list');
+  document.getElementById('prospects-count').textContent = `${prospects?.length || 0} en pipeline`;
+
+  if (!prospects?.length) {
+    el.innerHTML = '<div class="loading">Aucun prospect actif — renseignez <code>statut_prospection</code> dans la fiche commune</div>';
+    return;
+  }
+
+  const pipelineCfg = {
+    'Prospect':       { cls: 'badge-prospect', label: 'PROSPECT',  btn: true  },
+    'Contacté':       { cls: 'badge-contacte', label: 'CONTACTÉ',  btn: true  },
+    'Démo planifiée': { cls: 'badge-demo',     label: 'DÉMO 📅',   btn: false },
+  };
+
+  el.innerHTML = prospects.map(p => {
+    const cfg = pipelineCfg[p.statut_prospection] || { cls: 'badge-prospect', label: p.statut_prospection, btn: true };
+    const emailPrerempli = p.email_mairie || p.email_contact || '';
+    return `
+      <div class="prospect-row">
+        <div>
+          <div class="commune-name">${p.nom}</div>
+          <div class="admin-commune">${p.slug}.plateforme-agora.fr</div>
+        </div>
+        <span class="badge ${cfg.cls}">${cfg.label}</span>
+        ${cfg.btn
+          ? `<button class="btn-prospect" onclick="openEmailModal('${p.nom}','${p.slug}','${emailPrerempli}')">✉️ Envoyer démo</button>`
+          : `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center">démo en cours</span>`
+        }
+      </div>
+    `;
+  }).join('');
+}
+
+function openEmailModal(nomCommune, slug, emailMairie) {
+  document.getElementById('modal-email-sub').textContent = `${nomCommune} · ${slug}.plateforme-agora.fr`;
+  document.getElementById('email-to').value = emailMairie || '';
+  document.getElementById('email-subject').value = `Agora — La plateforme citoyenne pour ${nomCommune}`;
+  document.getElementById('email-body').value =
+`Bonjour Monsieur/Madame le Maire,
+
+Je me permets de vous contacter en tant qu'élu à Eaucourt-sur-Somme, où j'ai créé et déployé Agora, une plateforme numérique citoyenne pensée spécialement pour les petites communes comme la vôtre.
+
+Agora permet à vos habitants de signaler des problèmes directement à la mairie, de voter sur vos projets, de suivre l'agenda communal et de s'entraider entre voisins — le tout depuis leur téléphone, sans aucune installation technique de votre côté.
+
+Je sais ce que c'est de vouloir moderniser la vie locale avec des moyens limités. C'est exactement pour ça qu'Agora existe.
+
+👉 Découvrez la démonstration personnalisée ici :
+https://juicyagencyformation-collab.github.io/PLATEFORME-AGORA-DEMO-PERSONNALISATION/
+
+L'offre de lancement est à partir de 990 € par an — tout inclus, aucun frais caché, votre commune en ligne en moins de 24h.
+
+Je serais ravi d'échanger avec vous lors d'un appel de 15 minutes à votre convenance.
+
+Bien cordialement et avec enthousiasme,
+
+Juicy
+Élu — Commune d'Eaucourt-sur-Somme
+Créateur de la Plateforme Agora
+juicy.agency.formation@gmail.com`;
+
+  document.getElementById('modal-email-overlay').classList.add('open');
+}
+
+async function sendProspectEmail() {
+  const to      = document.getElementById("email-to").value.trim();
+  const subject = encodeURIComponent(document.getElementById("email-subject").value);
+  const body    = document.getElementById("email-body").value;
+
+  try {
+    await navigator.clipboard.writeText(body);
+  } catch(e) {
+    const ta = document.createElement("textarea");
+    ta.value = body; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+
+  closeModal("modal-email-overlay");
+  toast("u{1F4CB} Corps copié dans le presse-papier — collez-le dans Outlook (Ctrl+V)");
+
+  setTimeout(() => {
+    window.location.href = `mailto:${to}?subject=${subject}`;
+  }, 600);
+}
+
+// ── KPIs ──
+async function loadKpis() {
+  const [
+    { data: communes },
+    { count: users },
+    { count: signals },
+    { count: posts }
+  ] = await Promise.all([
+    sb.from('communes').select('actif'),
+    sb.from('profiles').select('*', { count: 'exact', head: true }),
+    sb.from('signalements').select('*', { count: 'exact', head: true }),
+    sb.from('mur_voisins').select('*', { count: 'exact', head: true })
+  ]);
+
+  const total  = communes?.length || 0;
+  const active = communes?.filter(c => c.actif).length || 0;
+  document.getElementById('kpi-communes').textContent     = total;
+  document.getElementById('kpi-communes-sub').textContent = `dont ${active} active${active > 1 ? 's' : ''}`;
+  document.getElementById('kpi-users').textContent        = users || 0;
+  document.getElementById('kpi-signals').textContent      = signals || 0;
+  document.getElementById('kpi-posts').textContent        = posts || 0;
+}
+
+// ── COMMUNES ──
+async function loadCommunes() {
+  const { data: communes }   = await sb.from('communes').select('*').order('nom');
+  const { data: userCounts } = await sb.from('profiles').select('commune_id');
+
+  const countByCommune = {};
+  userCounts?.forEach(p => { countByCommune[p.commune_id] = (countByCommune[p.commune_id] || 0) + 1; });
+
+  allCommunes = communes || [];
+  window._communes = allCommunes;
+  document.getElementById('communes-count').textContent = `${allCommunes.length} communes`;
+  renderCommunes(allCommunes, countByCommune);
+  window._countByCommune = countByCommune;
+  initEmailCommunes(); // alimenter le select email
+}
+
+function renderCommunes(list, countByCommune) {
+  const el = document.getElementById('communes-list');
+  const counts = countByCommune || window._countByCommune || {};
+  if (!list.length) { el.innerHTML = '<div class="loading">Aucune commune</div>'; return; }
+
+  el.innerHTML = list.map(c => `
+    <div class="commune-row" id="crow-${c.id}">
+      <!-- Nom + slug -->
+      <div>
+        <div class="commune-name">${c.nom}</div>
+        <div class="slug-inline-wrap">
+          <input class="slug-inline" id="slug-input-${c.id}" value="${c.slug || ''}"
+            onkeydown="handleSlugKey(event,${c.id})" onblur="cancelSlugEdit(${c.id})"
+            title="Entrée = sauvegarder · Échap = annuler">
+          <button class="slug-save-btn" onmousedown="saveSlug(${c.id})">✓</button>
+          <span class="slug-domain">.plateforme-agora.fr</span>
+        </div>
+      </div>
+      <!-- Users -->
+      <div>
+        <div class="stat-num">${counts[c.id] || 0}</div>
+        <div class="stat-label">users</div>
+      </div>
+      <!-- Statut -->
+      <span class="badge ${c.actif ? 'badge-on' : 'badge-off'}" id="badge-${c.id}">
+        ${c.actif ? 'ACTIVE' : 'OFF'}
+      </span>
+      <!-- Plan -->
+      <div style="text-align:center">
+        <div class="stat-num" style="font-size:12px;color:var(--gold)">${c.plan || '—'}</div>
+        <div class="stat-label">plan</div>
+      </div>
+      <!-- Actions : wrappées pour mobile -->
+      <div class="commune-actions">
+        <button class="btn-sm gold" onclick="openModal(${c.id})">✏️ Détail</button>
+        <button class="btn-sm ${c.actif ? 'on' : 'off'}" id="tbtn-${c.id}"
+          onclick="toggleCommune(${c.id},${c.actif})">
+          ${c.actif ? '⏸' : '▶'} ${c.actif ? 'Pause' : 'Activer'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCommunes(q) {
+  const lower = q.toLowerCase();
+  const filtered = allCommunes.filter(c =>
+    c.nom.toLowerCase().includes(lower) || (c.slug || '').toLowerCase().includes(lower)
+  );
+  renderCommunes(filtered);
+}
+
+async function toggleCommune(id, actif) {
+  const newVal = !actif;
+  const { error } = await sb.from('communes').update({ actif: newVal }).eq('id', id);
+  if (error) { toast('❌ Erreur'); return; }
+
+  document.getElementById(`badge-${id}`).className = `badge ${newVal ? 'badge-on' : 'badge-off'}`;
+  document.getElementById(`badge-${id}`).textContent = newVal ? 'ACTIVE' : 'OFF';
+  const btn = document.getElementById(`tbtn-${id}`);
+  btn.className = `btn-sm ${newVal ? 'on' : 'off'}`;
+  btn.textContent = newVal ? '⏸ Pause' : '▶ Activer';
+  btn.onclick = () => toggleCommune(id, newVal);
+
+  const c = allCommunes.find(x => x.id === id);
+  if (c) c.actif = newVal;
+
+  toast(newVal ? '✅ Commune activée' : '⏸ Commune suspendue');
+  loadKpis();
+}
+
+// ── SLUG INLINE ──
+async function saveSlug(id) {
+  const input    = document.getElementById(`slug-input-${id}`);
+  const newSlug  = input.value.trim().toLowerCase().replace(/\s+/g, '-').replace(/^-+|-+$/g, '');
+  if (!newSlug) { toast('⚠️ Slug vide'); return; }
+
+  const { error } = await sb.from('communes').update({ slug: newSlug }).eq('id', id);
+  if (error) {
+    toast('❌ ' + (error.message.includes('duplicate') ? 'Ce slug existe déjà !' : error.message));
+    input.focus(); return;
+  }
+  const c = allCommunes.find(x => x.id === id);
+  if (c) c.slug = newSlug;
+  input.value = newSlug;
+  input.blur();
+  toast(`✅ Slug → ${newSlug}`);
+}
+
+function handleSlugKey(e, id) {
+  if (e.key === 'Enter')  { e.preventDefault(); saveSlug(id); }
+  if (e.key === 'Escape') cancelSlugEdit(id);
+}
+
+function cancelSlugEdit(id) {
+  const c = allCommunes.find(x => x.id === id);
+  const input = document.getElementById(`slug-input-${id}`);
+  if (c && input) input.value = c.slug || '';
+}
+
+// ── MODAL COMMUNE ──
+function openModal(id) {
+  const c = allCommunes.find(x => x.id === id);
+  if (!c) return;
+  editingCommuneId = id;
+
+  document.getElementById('modal-commune-name').textContent = c.nom || '—';
+  document.getElementById('modal-commune-slug').textContent = `${c.slug}.plateforme-agora.fr · id ${c.id}`;
+
+  // Contacts
+  const emailMairie = c.email_mairie || c.email_contact || '';
+  const telephone   = c.telephone || '';
+  let linksHtml = '';
+  if (emailMairie) linksHtml += `<a class="contact-link" href="mailto:${emailMairie}"><span>✉️</span><span>${emailMairie}</span></a>`;
+  if (telephone)   linksHtml += `<a class="contact-link" href="tel:${telephone.replace(/\s/g,'')}" style="margin-top:8px"><span>📞</span><span>${telephone}</span></a>`;
+  if (!linksHtml)  linksHtml  = '<div style="font-size:12px;color:var(--muted);font-family:DM Mono,monospace;padding:8px 0">Aucun contact renseigné</div>';
+  document.getElementById('modal-contact-links').innerHTML = linksHtml;
+
+  // QR
+  const url = `https://${c.slug}.plateforme-agora.fr`;
+  document.getElementById('qr-url-label').textContent = url;
+  const qrEl = document.getElementById('qr-canvas');
+  qrEl.innerHTML = '';
+  new QRCode(qrEl, { text: url, width: 180, height: 180, colorDark: '#0d1b1e', colorLight: '#e8f0f2', correctLevel: QRCode.CorrectLevel.H });
+
+  // Formulaire
+  document.getElementById('f-nom').value           = c.nom || '';
+  document.getElementById('f-slug').value          = c.slug || '';
+  document.getElementById('f-email-mairie').value  = c.email_mairie || '';
+  document.getElementById('f-telephone').value     = c.telephone || '';
+  document.getElementById('f-email-contact').value = c.email_contact || '';
+  document.getElementById('f-owner-email').value   = c.owner_email || '';
+  document.getElementById('f-adresse').value       = c.adresse || '';
+  document.getElementById('f-notes').value         = c.notes || '';
+  document.getElementById('f-date-debut').value    = c.date_debut_abo ? c.date_debut_abo.substring(0,10) : '';
+  setSelect('f-plan',     c.plan || 'hameau');
+  setSelect('f-pipeline', c.pipeline_status || 'prospect');
+
+  document.getElementById('modal-commune-overlay').classList.add('open');
+}
+
+function setSelect(id, val) {
+  const sel = document.getElementById(id);
+  for (let opt of sel.options) { if (opt.value === val) { opt.selected = true; break; } }
+}
+
+async function saveCommune() {
+  if (!editingCommuneId) return;
+  const updates = {
+    nom:             document.getElementById('f-nom').value.trim(),
+    slug:            document.getElementById('f-slug').value.trim().toLowerCase().replace(/\s+/g,'-').replace(/^-+|-+$/g,''),
+    email_mairie:    document.getElementById('f-email-mairie').value.trim(),
+    telephone:       document.getElementById('f-telephone').value.trim(),
+    email_contact:   document.getElementById('f-email-contact').value.trim(),
+    owner_email:     document.getElementById('f-owner-email').value.trim(),
+    adresse:         document.getElementById('f-adresse').value.trim(),
+    notes:           document.getElementById('f-notes').value.trim(),
+    plan:            document.getElementById('f-plan').value,
+    pipeline_status: document.getElementById('f-pipeline').value,
+    date_debut_abo:  document.getElementById('f-date-debut').value || null,
+  };
+  const { error } = await sb.from('communes').update(updates).eq('id', editingCommuneId);
+  if (error) { toast('❌ ' + error.message); return; }
+  toast('✅ Commune mise à jour');
+  closeModal('modal-commune-overlay');
+  loadCommunes(); loadKpis();
+}
+
+function downloadQR() {
+  const img  = document.querySelector('#qr-canvas img');
+  if (!img) { toast('⚠️ QR non généré'); return; }
+  const slug = document.getElementById('f-slug').value || 'commune';
+  const a = document.createElement('a');
+  a.href = img.src; a.download = `qr-agora-${slug}.png`; a.click();
+  toast('📥 QR téléchargé');
+}
+
+// ── MODAL INVITE ──
+function openInviteModal() {
+  document.getElementById('modal-invite-overlay').classList.add('open');
+}
+
+// ── ADMINS ──
+async function loadAdmins() {
+  const { data: admins } = await sb
+    .from('profiles')
+    .select('id, nom, pseudo, role, commune_id')
+    .in('role', ['admin', 'super_admin', 'moderateur'])
+    .order('role');
+
+  const { data: communes } = await sb.from('communes').select('id, nom');
+  const communeMap = {};
+  communes?.forEach(c => { communeMap[c.id] = c.nom; });
+
+  const el = document.getElementById('admins-list');
+  document.getElementById('admins-count').textContent = `${admins?.length || 0} admins`;
+
+  if (!admins?.length) { el.innerHTML = '<div class="loading">Aucun admin</div>'; return; }
+
+  el.innerHTML = admins.map(a => {
+    const isSuperAdmin = a.role === 'super_admin';
+    return `
+      <div class="admin-row">
+        <div>
+          <div class="admin-name">${a.nom || a.pseudo}</div>
+          <div class="admin-commune">
+            ${communeMap[a.commune_id] ? `${communeMap[a.commune_id]} · ` : ''}@${a.pseudo}
+          </div>
+        </div>
+        <span class="role-badge ${isSuperAdmin ? 'role-super' : 'role-admin'}">${a.role}</span>
+        ${!isSuperAdmin ? `
+          <button class="btn-promote" onclick="promoteAdmin('${a.id}','${a.pseudo}')">→ super_admin</button>
+        ` : '<div></div>'}
+      </div>
+    `;
+  }).join('');
+}
+
+async function promoteAdmin(id, pseudo) {
+  if (!confirm(`Promouvoir @${pseudo} en super_admin ?`)) return;
+  const { error } = await sb.from('profiles').update({ role: 'super_admin' }).eq('id', id);
+  if (error) { toast('❌ Erreur'); return; }
+  toast(`⭐ @${pseudo} promu super_admin`);
+  loadAdmins();
+}
+
+// ── ACTIVITÉ ──
+async function loadActivity() {
+  const { data: communes } = await sb.from('communes').select('id, nom');
+  const communeMap = {};
+  communes?.forEach(c => { communeMap[c.id] = c.nom; });
+
+  const [{ data: signals }, { data: posts }, { data: users }] = await Promise.all([
+    sb.from('signalements').select('titre,auteur_nom,commune_id,created_at').order('created_at',{ascending:false}).limit(5),
+    sb.from('mur_voisins').select('contenu,auteur_nom,commune_id,created_at').order('created_at',{ascending:false}).limit(5),
+    sb.from('profiles').select('nom,pseudo,commune_id,created_at').order('created_at',{ascending:false}).limit(5)
+  ]);
+
+  const events = [
+    ...(signals||[]).map(s=>({type:'signal',label:s.titre,author:s.auteur_nom,commune:communeMap[s.commune_id]||'—',date:s.created_at})),
+    ...(posts||[]).map(p=>({type:'mur',label:(p.contenu?.substring(0,60)||'')+'…',author:p.auteur_nom,commune:communeMap[p.commune_id]||'—',date:p.created_at})),
+    ...(users||[]).map(u=>({type:'user',label:`Nouveau compte — @${u.pseudo}`,author:u.nom,commune:communeMap[u.commune_id]||'—',date:u.created_at}))
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,15);
+
+  const el = document.getElementById('activity-list');
+  document.getElementById('activity-count').textContent = `${events.length} derniers événements`;
+  if (!events.length) { el.innerHTML = '<div class="loading">Aucune activité</div>'; return; }
+
+  const cfg = { signal:{dot:'dot-signal',icon:'📍'}, mur:{dot:'dot-mur',icon:'💬'}, user:{dot:'dot-user',icon:'👤'} };
+  el.innerHTML = events.map(e => {
+    const c    = cfg[e.type] || {dot:'dot-mur',icon:'•'};
+    const time = new Date(e.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `
+      <div class="activity-row">
+        <div class="activity-dot ${c.dot}"></div>
+        <div class="activity-content">
+          <div class="activity-title">${c.icon} ${e.label}</div>
+          <div class="activity-meta">
+            <span>${e.author||'—'}</span><span>·</span>
+            <span style="color:var(--gold)">${e.commune}</span><span>·</span>
+            <span>${time}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── MODAL HELPERS ──
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modal-commune-overlay') editingCommuneId = null;
+}
+function handleOverlayClick(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// ── EMAILS & DRAFTS ──
+const PLAN_PRICE = { hameau:590, village:990, bourg:1790, ville:0, fondateur:390, free:0 };
+const PLAN_LABEL = { hameau:'Hameau', village:'Village', bourg:'Bourg', ville:'Ville', fondateur:'Fondateur', free:'Free' };
+
+const EMAIL_TEMPLATES = {
+  bienvenue: {
+    subject: 'Bienvenue sur AGORA — {commune}',
+    body: `Bonjour,
+
+Bienvenue sur la Plateforme Citoyenne AGORA de {commune} !
+
+Votre espace est maintenant actif. Vous pouvez y accéder à l'adresse suivante :
+https://{slug}.plateforme-agora.fr
+
+La plateforme vous permet de :
+→ Publier des annonces et actualités pour vos citoyens
+→ Gérer les signalements de la commune
+→ Animer votre communauté locale
+
+Pour toute question, je suis disponible à cette adresse.
+
+Bien cordialement,
+Leandre — Juicy Solutions`
+  },
+  facture: {
+    subject: 'Facture Plateforme Citoyenne AGORA — {commune}',
+    body: `Bonjour,
+
+Veuillez trouver ci-joint votre facture pour l'abonnement à la Plateforme Citoyenne AGORA.
+
+Plan souscrit : {plan}
+Montant : {montant} € / an
+Règlement par virement bancaire dans un délai de 30 jours.
+
+RIB disponible sur demande.
+
+Merci pour votre confiance,
+Leandre — Juicy Solutions`
+  },
+  relance: {
+    subject: 'Renouvellement abonnement AGORA — {commune}',
+    body: `Bonjour,
+
+Votre abonnement à la Plateforme Citoyenne AGORA de {commune} arrive à échéance prochainement.
+
+Pour assurer la continuité du service et conserver toutes vos données, je vous invite à renouveler votre abonnement.
+
+Je reste disponible pour tout ajustement ou question.
+
+Bien cordialement,
+Leandre — Juicy Solutions`
+  },
+  onboarding: {
+    subject: 'Accès administrateur — Plateforme Citoyenne AGORA {commune}',
+    body: `Bonjour,
+
+Votre accès administrateur à la Plateforme Citoyenne AGORA de {commune} est prêt.
+
+Connectez-vous ici :
+https://{slug}.plateforme-agora.fr
+
+Identifiant : {email}
+Mot de passe provisoire : à définir à la première connexion
+
+N'hésitez pas à me contacter pour la prise en main.
+
+Bien cordialement,
+Leandre — Juicy Solutions`
+  },
+  custom: { subject: '', body: '' }
+};
+
+function initEmailCommunes() {
+  const sel = document.getElementById('email-commune-sel');
+  if (!sel || sel.options.length > 1) return;
+  sel.innerHTML = '<option value="">— Choisir une commune —</option>' +
+    allCommunes.map(c => `<option value="${c.id}">${c.nom}</option>`).join('');
+}
+
+function setTemplate(key, btn) {
+  document.querySelectorAll('.t-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const tpl = EMAIL_TEMPLATES[key] || { subject:'', body:'' };
+  const communeId = document.getElementById('email-commune-sel').value;
+  const c = allCommunes.find(x => String(x.id) === String(communeId));
+  const nom     = c?.nom       || '{commune}';
+  const slug    = c?.slug      || '{slug}';
+  const plan    = PLAN_LABEL[c?.plan] || '{plan}';
+  const montant = PLAN_PRICE[c?.plan] || '{montant}';
+  const email   = c?.owner_email || '{email}';
+  const r = s => s
+    .replace(/\{commune\}/g, nom)
+    .replace(/\{slug\}/g,    slug)
+    .replace(/\{plan\}/g,    plan)
+    .replace(/\{montant\}/g, String(montant))
+    .replace(/\{email\}/g,   email);
+  document.getElementById('email-subject').value = r(tpl.subject);
+  document.getElementById('email-body').value    = r(tpl.body);
+}
+
+function prefillEmailRecipient() {
+  const id = document.getElementById('email-commune-sel').value;
+  const c  = allCommunes.find(x => String(x.id) === String(id));
+  if (c?.owner_email) document.getElementById('email-to').value = c.owner_email;
+  const activeTab = document.querySelector('.t-tab.active');
+  if (activeTab) {
+    const key = ['bienvenue','facture','relance','onboarding','custom']
+      .find(k => activeTab.textContent.toLowerCase().includes(k.slice(0,5))) || 'bienvenue';
+    setTemplate(key, activeTab);
+  }
+}
+
+function openEmailForCommune(communeId) {
+  initEmailCommunes();
+  document.getElementById('email-commune-sel').value = String(communeId);
+  const c = allCommunes.find(x => x.id === communeId);
+  if (c?.owner_email) document.getElementById('email-to').value = c.owner_email;
+  prefillEmailRecipient();
+  // Scroll vers le panel email
+  document.getElementById('panel-emails').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function createEmailDraft() {
+  const to      = document.getElementById('email-to').value.trim();
+  const subject = document.getElementById('email-subject').value.trim();
+  const body    = document.getElementById('email-body').value.trim();
+  if (!to)      return toast('⚠️ Email destinataire obligatoire');
+  if (!subject) return toast('⚠️ Objet obligatoire');
+
+  const btn = document.getElementById('btn-send-draft');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Création…';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: 'Tu es un assistant qui exécute des actions via des outils MCP. Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks.',
+        mcp_servers: [{ type:'url', url:'https://gmailmcp.googleapis.com/mcp/v1', name:'gmail' }],
+        messages: [{ role:'user', content:`Crée un brouillon Gmail avec: to=["${to}"], subject="${subject.replace(/"/g,"'")}", body="${body.replace(/\n/g,'\\n').replace(/"/g,"'")}". Retourne {"success":true,"draft_id":"..."}` }]
+      })
+    });
+    const data = await res.json();
+    // Parser la réponse MCP
+    let result = null;
+    for (const b of (data.content||[])) {
+      if (b.type === 'mcp_tool_result') {
+        try { result = JSON.parse(b.content?.[0]?.text||''); break; } catch(e){}
+      }
+    }
+    for (const b of (data.content||[])) {
+      if (!result && b.type === 'text') {
+        try { result = JSON.parse(b.text.replace(/```json|```/g,'').trim()); break; } catch(e){}
+      }
+    }
+
+    if (result?.success || result?.draft_id) {
+      toast('✅ Brouillon créé dans Gmail !');
+      await loadDrafts();
+    } else {
+      throw new Error('MCP non disponible');
+    }
+  } catch(e) {
+    // Fallback : ouvrir Gmail avec mailto
+    const url = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(url, '_blank');
+    toast('✅ Ouvert dans Gmail (nouvelle fenêtre)');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '✉ Créer le brouillon Gmail';
+}
+
+async function loadDrafts() {
+  const tbody = document.getElementById('drafts-table');
+  tbody.innerHTML = `<tr><td colspan="4" class="drafts-empty"><span class="spin"></span> Chargement…</td></tr>`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: 'Tu es un assistant qui exécute des actions via des outils MCP. Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks.',
+        mcp_servers: [{ type:'url', url:'https://gmailmcp.googleapis.com/mcp/v1', name:'gmail' }],
+        messages: [{ role:'user', content:'Liste les 10 derniers brouillons Gmail. Retourne {"drafts":[{"id":"...","subject":"...","to":"...","date":"..."}]}' }]
+      })
+    });
+    const data = await res.json();
+    let result = null;
+    for (const b of (data.content||[])) {
+      if (b.type === 'mcp_tool_result') {
+        try { result = JSON.parse(b.content?.[0]?.text||''); break; } catch(e){}
+      }
+    }
+    for (const b of (data.content||[])) {
+      if (!result && b.type === 'text') {
+        try { result = JSON.parse(b.text.replace(/```json|```/g,'').trim()); break; } catch(e){}
+      }
+    }
+
+    const drafts = result?.drafts || [];
+    tbody.innerHTML = drafts.length
+      ? drafts.map(d => `<tr>
+          <td style="font-weight:600;">${d.subject || '(Sans objet)'}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${d.to || '—'}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);">${d.date || '—'}</td>
+          <td><a href="https://mail.google.com/mail/#drafts/${d.id}" target="_blank" class="btn-open-draft">Ouvrir →</a></td>
+        </tr>`).join('')
+      : `<tr><td colspan="4" class="drafts-empty">Aucun brouillon récent — Gmail MCP requis</td></tr>`;
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="4" class="drafts-empty">Gmail MCP non connecté — <a href="https://mail.google.com/mail/#drafts" target="_blank" style="color:var(--gmail);">Ouvrir Gmail</a></td></tr>`;
+  }
+}
+
+// Initialiser les communes dans le select email après chargement
+const _origLoadCommunes = loadCommunes;
+// Hook : on enrichit le select email dès que allCommunes est prêt (appelé via initEmailCommunes au clic)
+
+// ── TOAST ──
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
