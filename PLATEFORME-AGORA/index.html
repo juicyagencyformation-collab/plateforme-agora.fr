@@ -1,0 +1,2211 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGORA — Démonstrateur interactif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+
+/* ══════════════════════════════════════════
+   RESET & VARIABLES
+══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Couleurs Juicy Solutions / AGORA */
+  --agora-navy:  #1a3a6e;
+  --agora-gold:  #c9a84c;
+  --agora-paper: #f8f7f4;
+
+  /* Couleurs dynamiques (overridées par JS) */
+  --c1: #1a3a6e;   /* couleur principale commune */
+  --c2: #c9a84c;   /* accent */
+  --c3: #f0efe9;   /* fond */
+
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --shadow-soft: 0 2px 12px rgba(0,0,0,0.07), 0 8px 32px rgba(0,0,0,0.05);
+  --shadow-strong: 0 8px 40px rgba(0,0,0,0.18);
+  --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: #0d1b35;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════════
+   BACKGROUND ANIMATED
+══════════════════════════════════════════ */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-glow {
+  position: fixed;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(26,58,110,0.5) 0%, transparent 70%);
+  top: -150px; left: -150px;
+  pointer-events: none;
+  z-index: 0;
+  animation: floatGlow 8s ease-in-out infinite alternate;
+}
+.bg-glow2 {
+  position: fixed;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%);
+  bottom: 0; right: 0;
+  pointer-events: none;
+  z-index: 0;
+  animation: floatGlow 10s ease-in-out infinite alternate-reverse;
+}
+@keyframes floatGlow {
+  from { transform: translate(0,0) scale(1); }
+  to   { transform: translate(40px,30px) scale(1.1); }
+}
+
+/* ══════════════════════════════════════════
+   LAYOUT
+══════════════════════════════════════════ */
+.wrapper {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 440px 1fr;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 36px;
+  background: rgba(13,27,53,0.8);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+.topbar-logo em { color: var(--agora-gold); font-style: normal; }
+.topbar-sep { width: 1px; height: 28px; background: rgba(255,255,255,0.1); }
+.topbar-tagline { font-size: 13px; color: rgba(255,255,255,0.45); font-weight: 300; }
+.topbar-spacer { flex: 1; }
+.topbar-badge {
+  background: linear-gradient(135deg, var(--agora-gold), #e8c76e);
+  color: #0d1b35;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: 20px;
+}
+
+/* ── PANEL GAUCHE (configurateur) ── */
+.panel-config {
+  background: rgba(255,255,255,0.04);
+  border-right: 1px solid rgba(255,255,255,0.07);
+  padding: 28px 28px 100px;
+  overflow-y: auto;
+  height: calc(100vh - 65px);
+  position: sticky;
+  top: 65px;
+}
+
+.config-section {
+  margin-bottom: 28px;
+}
+.config-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--agora-gold);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.config-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+}
+
+/* Inputs config */
+.cfg-field { margin-bottom: 12px; }
+.cfg-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 5px;
+  letter-spacing: 0.3px;
+}
+.cfg-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+.cfg-input:focus {
+  border-color: var(--agora-gold);
+  background: rgba(255,255,255,0.09);
+}
+.cfg-input::placeholder { color: rgba(255,255,255,0.25); }
+
+/* ── PALETTE ÉLARGIE ── */
+.palette-groups { margin-bottom: 12px; }
+
+.palette-group { margin-bottom: 10px; }
+.palette-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.28);
+  margin-bottom: 6px;
+}
+.palette-row {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.palette-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+.palette-swatch:hover { transform: scale(1.18); z-index: 2; }
+.palette-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.25);
+  transform: scale(1.15);
+}
+.palette-swatch .check-mark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.palette-swatch.active .check-mark { opacity: 1; }
+
+.palette-custom-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.palette-custom-row input[type=color] {
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 2px;
+  background: rgba(255,255,255,0.08);
+  flex-shrink: 0;
+}
+.palette-preview-chip {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.1);
+  transition: background 0.3s;
+}
+
+/* Accent grid (plus large) */
+.accent-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.accent-pill {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.accent-pill:hover { transform: scale(1.2); }
+.accent-pill.active { border-color: white; transform: scale(1.2); box-shadow: 0 0 0 2px rgba(255,255,255,0.2); }
+
+/* ── SUBSCRIBE FORM ── */
+.subscribe-form {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+.subscribe-intro {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.subscribe-intro strong { color: var(--agora-gold); }
+.sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.sub-recap-box {
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.8;
+  display: none;
+}
+.sub-recap-box.visible { display: block; }
+.sub-recap-box strong { color: var(--agora-gold); }
+.sub-recap-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--agora-gold);
+  margin-bottom: 8px;
+}
+
+.btn-subscribe {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, var(--agora-gold), #e8c76e);
+  color: #0d1b35;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+.btn-subscribe:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(201,168,76,0.4); }
+
+/* Sidebar plus large pour accueillir tout */
+.panel-config { width: 100%; }
+.wrapper { grid-template-columns: 480px 1fr; }
+
+/* Toggles features */
+.feature-toggles { display: flex; flex-direction: column; gap: 8px; }
+.feature-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.feature-toggle:hover { background: rgba(255,255,255,0.08); }
+.feature-toggle-icon { font-size: 18px; flex-shrink: 0; }
+.feature-toggle-text { flex: 1; }
+.feature-toggle-name { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.85); }
+.feature-toggle-desc { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 1px; }
+.toggle-switch {
+  width: 36px;
+  height: 20px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  background: white;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+}
+.feature-toggle.on .toggle-switch { background: var(--agora-gold); }
+.feature-toggle.on .toggle-switch::after { transform: translateX(16px); }
+
+/* Slider */
+.cfg-slider { display: flex; align-items: center; gap: 10px; }
+.cfg-slider input[type=range] {
+  flex: 1;
+  -webkit-appearance: none;
+  height: 3px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  outline: none;
+}
+.cfg-slider input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  background: var(--agora-gold);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(201,168,76,0.25);
+}
+.cfg-slider-val {
+  font-size: 12px;
+  color: var(--agora-gold);
+  font-weight: 600;
+  min-width: 30px;
+  text-align: right;
+}
+
+/* QR Zone */
+.qr-section {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+.qr-container {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+#qr-canvas {
+  background: white;
+  border-radius: 8px;
+  padding: 8px;
+  flex-shrink: 0;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#qr-canvas canvas, #qr-canvas img { width: 84px !important; height: 84px !important; }
+.qr-info { flex: 1; }
+.qr-url {
+  font-size: 10px;
+  color: rgba(255,255,255,0.4);
+  word-break: break-all;
+  line-height: 1.5;
+  margin-bottom: 8px;
+  font-family: 'Courier New', monospace;
+  background: rgba(255,255,255,0.04);
+  padding: 6px 8px;
+  border-radius: 4px;
+  display: block;
+}
+.btn-gen-qr {
+  width: 100%;
+  padding: 9px;
+  background: linear-gradient(135deg, var(--agora-gold), #e8c76e);
+  color: #0d1b35;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-gen-qr:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,168,76,0.4); }
+
+.btn-dl-qr {
+  width: 100%;
+  padding: 7px;
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all 0.15s;
+}
+.btn-dl-qr:hover { border-color: rgba(255,255,255,0.3); color: white; }
+
+/* ── PANEL DROIT (preview) ── */
+.panel-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px 80px;
+  overflow-y: auto;
+  height: calc(100vh - 65px);
+  position: sticky;
+  top: 65px;
+}
+
+.preview-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.preview-label::before, .preview-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+}
+
+/* Device frame */
+.device-frame {
+  width: 100%;
+  max-width: 760px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow-strong), 0 0 0 1px rgba(255,255,255,0.04);
+}
+.device-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.device-dot { width: 10px; height: 10px; border-radius: 50%; }
+.device-dot.red   { background: #ff5f57; }
+.device-dot.yel   { background: #febc2e; }
+.device-dot.grn   { background: #28c840; }
+.device-url {
+  flex: 1;
+  margin: 0 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Courier New', monospace;
+}
+
+/* ── APP AGORA PREVIEW ── */
+#agora-app {
+  background: var(--c3);
+  min-height: 580px;
+  transition: background var(--transition), color var(--transition);
+  font-family: 'Outfit', sans-serif;
+}
+
+/* App Header */
+.app-topbar {
+  background: var(--c1);
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background var(--transition);
+}
+.app-topbar-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+.app-topbar-name {
+  font-size: 13px;
+  opacity: 0.75;
+  font-weight: 300;
+}
+.app-topbar-spacer { flex: 1; }
+.app-topbar-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+/* Hero section */
+.app-hero {
+  background: linear-gradient(160deg, var(--c1) 0%, color-mix(in srgb, var(--c1) 80%, black) 100%);
+  color: white;
+  padding: 40px 28px 48px;
+  position: relative;
+  overflow: hidden;
+  transition: background var(--transition);
+}
+.app-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 80% 50%, rgba(255,255,255,0.06) 0%, transparent 60%);
+}
+.app-hero-pretitle {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+.app-hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+.app-hero-title em {
+  color: var(--c2);
+  font-style: italic;
+  transition: color var(--transition);
+}
+.app-hero-sub {
+  font-size: 14px;
+  opacity: 0.7;
+  line-height: 1.6;
+  max-width: 460px;
+  margin-bottom: 22px;
+}
+.app-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--c2);
+  color: #fff;
+  padding: 11px 24px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition), transform 0.15s;
+}
+.app-hero-cta:hover { transform: translateY(-2px); }
+.app-hero-stats {
+  display: flex;
+  gap: 28px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.12);
+}
+.app-stat { }
+.app-stat-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c2);
+  transition: color var(--transition);
+}
+.app-stat-label { font-size: 11px; opacity: 0.55; font-weight: 400; }
+
+/* Nav tabs */
+.app-nav {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  padding: 0 16px;
+  overflow-x: auto;
+}
+.app-nav-tab {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.4);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.app-nav-tab.active {
+  color: var(--c1);
+  border-bottom-color: var(--c1);
+  transition: color var(--transition), border-color var(--transition);
+}
+
+/* Feed */
+.app-feed { padding: 16px; background: var(--c3); }
+.app-feed-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--c1);
+  margin-bottom: 12px;
+  transition: color var(--transition);
+}
+
+.app-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+  transition: box-shadow 0.2s;
+}
+.app-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.1); }
+.app-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.app-card-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--c1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+.app-card-meta { flex: 1; }
+.app-card-author { font-size: 12px; font-weight: 700; color: #111; }
+.app-card-time { font-size: 10px; color: #999; }
+.app-card-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  background: var(--c1);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+  opacity: 0.85;
+  transition: background var(--transition);
+}
+.app-card-body { font-size: 13px; color: #333; line-height: 1.55; }
+.app-card-img {
+  width: 100%;
+  height: 80px;
+  border-radius: 8px;
+  margin-top: 10px;
+  object-fit: cover;
+}
+.app-card-img-placeholder {
+  width: 100%;
+  height: 80px;
+  border-radius: 8px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, var(--c1) 0%, color-mix(in srgb, var(--c1) 60%, var(--c2)) 100%);
+  opacity: 0.12;
+  transition: background var(--transition);
+}
+.app-card-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+.app-card-action {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.app-card-action:hover { color: var(--c1); }
+
+/* Event card */
+.app-event-card {
+  display: flex;
+  gap: 14px;
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  align-items: center;
+}
+.app-event-date {
+  flex-shrink: 0;
+  width: 48px;
+  text-align: center;
+  background: var(--c1);
+  color: white;
+  border-radius: 10px;
+  padding: 6px 4px;
+  transition: background var(--transition);
+}
+.app-event-day { font-size: 20px; font-weight: 700; line-height: 1; }
+.app-event-month { font-size: 9px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+.app-event-title { font-size: 13px; font-weight: 700; color: #111; margin-bottom: 3px; }
+.app-event-loc { font-size: 11px; color: #888; display: flex; align-items: center; gap: 4px; }
+
+/* Sondage widget */
+.app-poll {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.app-poll-q { font-size: 13px; font-weight: 700; color: #111; margin-bottom: 12px; }
+.app-poll-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.app-poll-bar-wrap {
+  flex: 1;
+  height: 28px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.app-poll-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--c1), color-mix(in srgb, var(--c1) 70%, var(--c2)));
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1), background var(--transition);
+}
+.app-poll-pct { font-size: 12px; font-weight: 700; color: var(--c1); min-width: 34px; text-align: right; transition: color var(--transition); }
+
+/* Bottom nav mobile style */
+.app-bottomnav {
+  display: flex;
+  background: white;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 8px 0 4px;
+}
+.app-bn-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 4px;
+}
+.app-bn-icon { font-size: 18px; }
+.app-bn-label { font-size: 9px; font-weight: 600; color: #aaa; }
+.app-bn-item.active .app-bn-label { color: var(--c1); transition: color var(--transition); }
+.app-bn-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--c1);
+  display: none;
+  transition: background var(--transition);
+}
+.app-bn-item.active .app-bn-dot { display: block; }
+
+/* ── TABS preview ── */
+.preview-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--radius-md);
+  padding: 5px;
+}
+.preview-tab {
+  flex: 1;
+  padding: 7px;
+  border: none;
+  background: none;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.preview-tab.active {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+/* ══════════════════════════════════════════
+   BOTTOM CTA BAR
+══════════════════════════════════════════ */
+.cta-bar {
+  position: fixed;
+  bottom: 0;
+  left: 440px;
+  right: 0;
+  background: rgba(13,27,53,0.95);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 50;
+}
+.cta-bar-price {
+  display: flex;
+  flex-direction: column;
+}
+.cta-bar-amount {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--agora-gold);
+  line-height: 1;
+}
+.cta-bar-period { font-size: 11px; color: rgba(255,255,255,0.4); }
+.cta-bar-spacer { flex: 1; }
+.cta-bar-tier {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  text-align: right;
+}
+.cta-bar-tier strong { color: rgba(255,255,255,0.85); display: block; font-size: 13px; }
+.btn-cta {
+  padding: 11px 28px;
+  background: linear-gradient(135deg, var(--agora-gold) 0%, #e8c76e 100%);
+  color: #0d1b35;
+  border: none;
+  border-radius: 30px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(201,168,76,0.4); }
+
+/* ── OFFER CARDS ── */
+.offer-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.offer-card {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.offer-card:hover {
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.08);
+}
+.offer-card.active {
+  border-color: var(--agora-gold);
+  background: rgba(201,168,76,0.08);
+  box-shadow: 0 0 0 1px rgba(201,168,76,0.3);
+}
+.offer-card-featured {
+  border-color: var(--agora-gold);
+  background: rgba(201,168,76,0.06);
+}
+.offer-card-featured.active {
+  background: rgba(201,168,76,0.12);
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.4);
+}
+.offer-featured-label {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--agora-gold), #e8c76e);
+  color: #0d1b35;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.offer-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.offer-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+}
+.offer-price {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--agora-gold);
+  line-height: 1;
+}
+.offer-price span {
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.4);
+  margin-left: 2px;
+}
+.offer-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.offer-features li {
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.4;
+}
+.offer-features li strong { color: rgba(255,255,255,0.9); }
+.offer-sub-detail {
+  font-size: 10px !important;
+  color: rgba(255,255,255,0.4) !important;
+  padding-left: 10px;
+}
+.offer-badge-row {
+  margin-top: 8px;
+  min-height: 16px;
+}
+.offer-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.offer-badge-premium {
+  background: linear-gradient(135deg, rgba(201,168,76,0.25), rgba(201,168,76,0.1));
+  color: var(--agora-gold);
+  border: 1px solid rgba(201,168,76,0.3);
+}
+
+/* Accompagnement detail */
+.accomp-detail {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-top: 4px;
+}
+.accomp-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--agora-gold);
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+.accomp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.accomp-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+.accomp-icon { font-size: 20px; }
+.accomp-text {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+}
+.accomp-text strong { color: rgba(255,255,255,0.8); display: block; font-size: 11px; }
+
+/* CTA bar updated */
+.cta-bar-sep {
+  width: 1px;
+  height: 32px;
+  background: rgba(255,255,255,0.1);
+  margin: 0 4px;
+}
+.cta-bar-includes {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  max-width: 160px;
+  line-height: 1.3;
+}
+.cta-bar-tier span {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.4);
+  margin-top: 1px;
+}
+  .wrapper { grid-template-columns: 1fr; }
+  .panel-config { height: auto; position: relative; top: 0; }
+  .cta-bar { left: 0; }
+}
+
+/* Animations entrée */
+.device-frame {
+  animation: slideUp 0.6s cubic-bezier(0.4,0,0.2,1) both;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Pulse live indicator */
+.live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  margin-right: 6px;
+  animation: pulse-live 1.5s ease-in-out infinite;
+}
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,0.4); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(74,222,128,0); }
+}
+
+/* Tooltip */
+.tooltip-wrap { position: relative; display: inline-block; }
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.85);
+  color: white;
+  font-size: 10px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.tooltip-wrap:hover .tooltip { opacity: 1; }
+
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-glow2"></div>
+
+<div class="wrapper">
+
+  <!-- ════ TOPBAR ════ -->
+  <header class="topbar">
+    <div class="topbar-logo">AG<em>O</em>RA</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-tagline">Plateforme citoyenne pour communes françaises</div>
+    <div class="topbar-spacer"></div>
+    <span class="live-dot"></span>
+    <div style="font-size:11px;color:rgba(255,255,255,0.4)">Aperçu en direct</div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-badge">Démonstrateur</div>
+  </header>
+
+  <!-- ════ PANEL CONFIG ════ -->
+  <aside class="panel-config">
+
+    <!-- IDENTITÉ -->
+    <div class="config-section">
+      <div class="config-title">🏛️ Identité de votre commune</div>
+      <div class="cfg-field">
+        <label class="cfg-label">Nom de la commune</label>
+        <input class="cfg-input" id="cfg-commune" placeholder="Commune de Saint-Valery" value="Commune d'Eaucourt-sur-Somme" oninput="updatePreview()">
+      </div>
+      <div class="cfg-field">
+        <label class="cfg-label">Slogan / Devise</label>
+        <input class="cfg-input" id="cfg-slogan" placeholder="Ensemble, bâtissons notre avenir" value="Ensemble, façonnons notre village" oninput="updatePreview()">
+      </div>
+      <div class="cfg-field">
+        <label class="cfg-label">Population approximative</label>
+        <select class="cfg-input" id="cfg-pop" onchange="updatePreview()">
+          <option value="< 500">Moins de 500 habitants</option>
+          <option value="500–2 000">500 à 2 000 habitants</option>
+          <option value="2 000–5 000">2 000 à 5 000 habitants</option>
+          <option value="> 5 000">Plus de 5 000 habitants</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TABLEAU DES OFFRES -->
+    <div class="config-section">
+      <div class="config-title">💼 Choisissez votre offre</div>
+      <div class="offer-cards" id="offer-cards">
+
+        <div class="offer-card" data-offer="essentiel" onclick="selectOffer('essentiel', this)">
+          <div class="offer-card-top">
+            <div class="offer-name">Essentiel</div>
+            <div class="offer-price">990 €<span>/an</span></div>
+          </div>
+          <ul class="offer-features">
+            <li>✅ Plateforme citoyenne complète</li>
+            <li>✅ Tous les modules inclus</li>
+            <li>✅ Hébergement & mises à jour</li>
+            <li>✅ Support email illimité</li>
+            <li>✅ Accès admin mairie</li>
+          </ul>
+          <div class="offer-badge-row"></div>
+        </div>
+
+        <div class="offer-card offer-card-featured" data-offer="pro" onclick="selectOffer('pro', this)">
+          <div class="offer-featured-label">⭐ Recommandé</div>
+          <div class="offer-card-top">
+            <div class="offer-name">Pro</div>
+            <div class="offer-price">1 490 €<span>/an</span></div>
+          </div>
+          <ul class="offer-features">
+            <li>✅ Tout l'Essentiel</li>
+            <li>✅ <strong>Accompagnement 1 mois</strong></li>
+            <li class="offer-sub-detail">↳ 4 appels hebdomadaires</li>
+            <li class="offer-sub-detail">↳ Support prioritaire 4h/semaine</li>
+            <li class="offer-sub-detail">↳ Formation visio admin incluse</li>
+          </ul>
+          <div class="offer-badge-row"><span class="offer-badge">Populaire</span></div>
+        </div>
+
+        <div class="offer-card" data-offer="premium" onclick="selectOffer('premium', this)">
+          <div class="offer-card-top">
+            <div class="offer-name">Premium</div>
+            <div class="offer-price">2 490 €<span>/an</span></div>
+          </div>
+          <ul class="offer-features">
+            <li>✅ Tout le Pro</li>
+            <li>✅ <strong>Logo & couleurs sur mesure</strong></li>
+            <li>✅ <strong>Intégration site web existant</strong></li>
+            <li>✅ <strong>Formation élus en présentiel</strong></li>
+            <li>✅ Accompagnement prioritaire</li>
+          </ul>
+          <div class="offer-badge-row"><span class="offer-badge offer-badge-premium">Clé en main</span></div>
+        </div>
+
+      </div>
+
+      <!-- Détail accompagnement 1 mois -->
+      <div class="accomp-detail" id="accomp-detail">
+        <div class="accomp-title">📞 Détail de l'accompagnement 1 mois (offres Pro & Premium)</div>
+        <div class="accomp-grid">
+          <div class="accomp-item">
+            <div class="accomp-icon">📅</div>
+            <div class="accomp-text"><strong>4 appels hebdo</strong><br>Suivi régulier chaque semaine</div>
+          </div>
+          <div class="accomp-item">
+            <div class="accomp-icon">🎧</div>
+            <div class="accomp-text"><strong>Support 4h/semaine</strong><br>Réponse prioritaire garantie</div>
+          </div>
+          <div class="accomp-item">
+            <div class="accomp-icon">🎓</div>
+            <div class="accomp-text"><strong>Formation visio admin</strong><br>Prise en main complète de la plateforme</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COULEUR PRINCIPALE -->
+    <div class="config-section">
+      <div class="config-title">🎨 Couleur principale</div>
+
+      <!-- Groupes thématiques -->
+      <div class="palette-groups" id="palette-groups"></div>
+
+      <!-- Picker custom -->
+      <div class="palette-custom-row">
+        <input type="color" id="color-custom-picker" value="#1a3a6e" oninput="applyCustomColor(this.value)">
+        <input class="cfg-input" id="color-custom-hex" placeholder="#1a3a6e" value="#1a3a6e" oninput="applyHexColor(this.value)">
+        <div class="palette-preview-chip" id="palette-preview-chip" style="background:#1a3a6e"></div>
+      </div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:4px">
+        Couleur sélectionnée : <span id="selected-color-name">Bleu Marine AGORA</span>
+      </div>
+    </div>
+
+    <!-- COULEUR ACCENT -->
+    <div class="config-section">
+      <div class="config-title">✨ Couleur d'accent</div>
+      <div class="accent-grid" id="accent-picks"></div>
+    </div>
+
+    <!-- FONCTIONNALITÉS -->
+    <div class="config-section">
+      <div class="config-title">⚙️ Modules activés</div>
+      <div class="feature-toggles" id="feature-toggles">
+        <div class="feature-toggle on" data-id="actu" onclick="toggleFeature(this)">
+          <div class="feature-toggle-icon">📰</div>
+          <div class="feature-toggle-text">
+            <div class="feature-toggle-name">Actualités</div>
+            <div class="feature-toggle-desc">Publications et annonces municipales</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="feature-toggle on" data-id="evenements" onclick="toggleFeature(this)">
+          <div class="feature-toggle-icon">📅</div>
+          <div class="feature-toggle-text">
+            <div class="feature-toggle-name">Événements</div>
+            <div class="feature-toggle-desc">Agenda municipal interactif</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="feature-toggle on" data-id="sondages" onclick="toggleFeature(this)">
+          <div class="feature-toggle-icon">🗳️</div>
+          <div class="feature-toggle-text">
+            <div class="feature-toggle-name">Sondages citoyens</div>
+            <div class="feature-toggle-desc">Consultations et votes participatifs</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="feature-toggle" data-id="signalement" onclick="toggleFeature(this)">
+          <div class="feature-toggle-icon">🚧</div>
+          <div class="feature-toggle-text">
+            <div class="feature-toggle-name">Signalement</div>
+            <div class="feature-toggle-desc">Problèmes voirie, propreté…</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+        <div class="feature-toggle" data-id="documents" onclick="toggleFeature(this)">
+          <div class="feature-toggle-icon">📄</div>
+          <div class="feature-toggle-text">
+            <div class="feature-toggle-name">Documents officiels</div>
+            <div class="feature-toggle-desc">CR Conseil, délibérations…</div>
+          </div>
+          <div class="toggle-switch"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIEN & QR CODE -->
+    <div class="config-section">
+      <div class="config-title">🔗 Lien & QR Code</div>
+      <div class="qr-section">
+        <div class="cfg-field">
+          <label class="cfg-label">URL de la plateforme</label>
+          <input class="cfg-input" id="cfg-url" placeholder="https://agora.juicysolutions.fr/eaucourt" value="https://agora.juicysolutions.fr/eaucourt" oninput="updateQRPreview()">
+        </div>
+        <div class="qr-container">
+          <div id="qr-canvas"><span style="font-size:10px;color:#ccc;text-align:center">Cliquez<br>Générer</span></div>
+          <div class="qr-info">
+            <span class="qr-url" id="qr-url-display">https://agora.juicysolutions.fr/eaucourt</span>
+            <button class="btn-gen-qr" onclick="generateQR()">📱 Générer le QR Code</button>
+            <button class="btn-dl-qr" onclick="downloadQR()" id="btn-dl" style="display:none">⬇️ Télécharger PNG</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOUSCRIPTION -->
+    <div class="config-section">
+      <div class="config-title">📨 Souscrire à AGORA</div>
+      <div class="subscribe-form" id="subscribe-form">
+        <div class="subscribe-intro">
+          Complétez ce formulaire — un récapitulatif complet sera envoyé à <strong>Juicy Solutions</strong> pour démarrer l'onboarding de votre commune.
+        </div>
+
+        <div class="sub-grid">
+          <div class="cfg-field">
+            <label class="cfg-label">Nom complet du signataire *</label>
+            <input class="cfg-input" id="sub-nom" placeholder="M. Jean Dupont">
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">Fonction *</label>
+            <input class="cfg-input" id="sub-fonction" placeholder="Maire, DGS…">
+          </div>
+        </div>
+        <div class="cfg-field">
+          <label class="cfg-label">Email officiel *</label>
+          <input class="cfg-input" id="sub-email" type="email" placeholder="mairie@commune.fr">
+        </div>
+        <div class="cfg-field">
+          <label class="cfg-label">Téléphone direct</label>
+          <input class="cfg-input" id="sub-tel" placeholder="03 XX XX XX XX">
+        </div>
+        <div class="sub-grid">
+          <div class="cfg-field">
+            <label class="cfg-label">SIRET de la commune</label>
+            <input class="cfg-input" id="sub-siret" placeholder="XXX XXX XXX XXXXX">
+          </div>
+          <div class="cfg-field">
+            <label class="cfg-label">N° SIREN</label>
+            <input class="cfg-input" id="sub-siren" placeholder="XXX XXX XXX">
+          </div>
+        </div>
+        <div class="cfg-field">
+          <label class="cfg-label">Adresse complète de la mairie *</label>
+          <textarea class="cfg-input" id="sub-adresse" rows="2" placeholder="1 place de la Mairie&#10;80580 Eaucourt-sur-Somme"></textarea>
+        </div>
+        <div class="cfg-field">
+          <label class="cfg-label">Nom du référent technique (si différent)</label>
+          <input class="cfg-input" id="sub-referent" placeholder="Prénom NOM — agent mairie">
+        </div>
+        <div class="cfg-field">
+          <label class="cfg-label">Email référent technique</label>
+          <input class="cfg-input" id="sub-email-tech" type="email" placeholder="secretariat@commune.fr">
+        </div>
+        <div class="cfg-field">
+          <label class="cfg-label">Date de démarrage souhaitée</label>
+          <input class="cfg-input" id="sub-demarrage" type="date">
+        </div>
+        <div class="cfg-field">
+          <label class="cfg-label">Commentaires / demandes spécifiques</label>
+          <textarea class="cfg-input" id="sub-notes" rows="3" placeholder="Ex : besoin d'une formation en présentiel, intégration agenda existant…"></textarea>
+        </div>
+
+        <div class="sub-recap-box" id="sub-recap">
+          <!-- Rempli dynamiquement -->
+        </div>
+
+        <button class="btn-subscribe" onclick="sendSubscription()">
+          📨 Envoyer ma souscription à Juicy Solutions
+        </button>
+        <div style="font-size:10px;color:rgba(255,255,255,0.25);margin-top:8px;text-align:center">
+          Ouvre votre client email avec le récapitulatif pré-rempli — aucune donnée envoyée sans votre confirmation
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ════ PANEL PREVIEW ════ -->
+  <main class="panel-preview">
+
+    <div class="preview-label">
+      Aperçu de la plateforme — mis à jour en temps réel
+    </div>
+
+    <div class="preview-tabs">
+      <button class="preview-tab active" onclick="switchView('accueil', this)">🏠 Accueil</button>
+      <button class="preview-tab" onclick="switchView('evenements', this)">📅 Événements</button>
+      <button class="preview-tab" onclick="switchView('sondage', this)">🗳️ Sondage</button>
+    </div>
+
+    <div class="device-frame">
+      <!-- Barre navigateur fictive -->
+      <div class="device-topbar">
+        <div class="device-dot red"></div>
+        <div class="device-dot yel"></div>
+        <div class="device-dot grn"></div>
+        <div class="device-url" id="device-url-bar">agora.juicysolutions.fr/eaucourt</div>
+      </div>
+
+      <!-- App AGORA simulée -->
+      <div id="agora-app">
+
+        <!-- Header app -->
+        <div class="app-topbar">
+          <div class="app-topbar-logo">AGORA</div>
+          <div class="app-topbar-name" id="app-commune-name">Eaucourt-sur-Somme</div>
+          <div class="app-topbar-spacer"></div>
+          <button class="app-topbar-btn">🔔</button>
+        </div>
+
+        <!-- Vue Accueil -->
+        <div id="view-accueil">
+          <div class="app-hero">
+            <div class="app-hero-pretitle">Votre espace citoyen</div>
+            <div class="app-hero-title">Bienvenue sur <em id="hero-commune">AGORA</em></div>
+            <div class="app-hero-sub" id="hero-slogan">Ensemble, façonnons notre village. Participez à la vie municipale, restez informés et faites entendre votre voix.</div>
+            <button class="app-hero-cta">✨ Participer maintenant</button>
+            <div class="app-hero-stats">
+              <div class="app-stat"><div class="app-stat-num">247</div><div class="app-stat-label">Citoyens inscrits</div></div>
+              <div class="app-stat"><div class="app-stat-num">18</div><div class="app-stat-label">Publications ce mois</div></div>
+              <div class="app-stat"><div class="app-stat-num">3</div><div class="app-stat-label">Sondages ouverts</div></div>
+            </div>
+          </div>
+
+          <div class="app-nav" id="app-nav-tabs">
+            <div class="app-nav-tab active">📰 Actualités</div>
+            <div class="app-nav-tab" id="nav-evenements">📅 Événements</div>
+            <div class="app-nav-tab" id="nav-sondages">🗳️ Sondages</div>
+            <div class="app-nav-tab" id="nav-signalement" style="display:none">🚧 Signaler</div>
+            <div class="app-nav-tab" id="nav-documents" style="display:none">📄 Documents</div>
+          </div>
+
+          <div class="app-feed">
+            <div class="app-feed-title">À la une</div>
+
+            <div class="app-card">
+              <div class="app-card-head">
+                <div class="app-card-avatar" id="card1-avatar">M</div>
+                <div class="app-card-meta">
+                  <div class="app-card-author">Mairie</div>
+                  <div class="app-card-time">Il y a 2 heures</div>
+                </div>
+                <div class="app-card-tag">Officiel</div>
+              </div>
+              <div class="app-card-body">🗓️ <strong>Conseil municipal du 15 juin</strong> — Ordre du jour disponible. Au programme : vote du budget modificatif, point sur les travaux de la salle polyvalente et questions diverses.</div>
+              <div class="app-card-img-placeholder"></div>
+              <div class="app-card-actions">
+                <div class="app-card-action">👍 12 J'aime</div>
+                <div class="app-card-action">💬 4 Commentaires</div>
+                <div class="app-card-action">🔗 Partager</div>
+              </div>
+            </div>
+
+            <div class="app-card">
+              <div class="app-card-head">
+                <div class="app-card-avatar" style="background:#2d7d46">A</div>
+                <div class="app-card-meta">
+                  <div class="app-card-author">Association Sportive</div>
+                  <div class="app-card-time">Hier</div>
+                </div>
+                <div class="app-card-tag" style="background:#2d7d46">Association</div>
+              </div>
+              <div class="app-card-body">⚽ Reprise des entraînements de football le 1er septembre ! Inscriptions ouvertes pour toutes les catégories. Renseignements au 06 XX XX XX XX.</div>
+              <div class="app-card-actions">
+                <div class="app-card-action">👍 28 J'aime</div>
+                <div class="app-card-action">💬 7 Commentaires</div>
+                <div class="app-card-action">🔗 Partager</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Vue Événements -->
+        <div id="view-evenements" style="display:none">
+          <div class="app-feed" style="padding-top:16px">
+            <div class="app-feed-title">Agenda municipal</div>
+            <div class="app-event-card">
+              <div class="app-event-date"><div class="app-event-day">15</div><div class="app-event-month">Juin</div></div>
+              <div><div class="app-event-title">Conseil municipal</div><div class="app-event-loc">🏛️ Salle du conseil — 20h00</div></div>
+            </div>
+            <div class="app-event-card">
+              <div class="app-event-date"><div class="app-event-day">22</div><div class="app-event-month">Juin</div></div>
+              <div><div class="app-event-title">Fête de la musique</div><div class="app-event-loc">📍 Place de la Mairie — 18h00</div></div>
+            </div>
+            <div class="app-event-card">
+              <div class="app-event-date"><div class="app-event-day">01</div><div class="app-event-month">Juil.</div></div>
+              <div><div class="app-event-title">Marché estival</div><div class="app-event-loc">📍 Esplanade du Moulin — 9h00–13h00</div></div>
+            </div>
+            <div class="app-event-card">
+              <div class="app-event-date"><div class="app-event-day">14</div><div class="app-event-month">Juil.</div></div>
+              <div><div class="app-event-title">Fête nationale — Festivités</div><div class="app-event-loc">🎆 Parc communal — 21h30</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vue Sondage -->
+        <div id="view-sondage" style="display:none">
+          <div class="app-feed" style="padding-top:16px">
+            <div class="app-feed-title">Sondages en cours</div>
+            <div class="app-poll">
+              <div class="app-poll-q">🗳️ Quel projet prioriser pour 2025 ?</div>
+              <div class="app-poll-option">
+                <div style="font-size:12px;width:130px;color:#333">Salle polyvalente</div>
+                <div class="app-poll-bar-wrap"><div class="app-poll-bar" style="width:62%">62%</div></div>
+                <div class="app-poll-pct">62%</div>
+              </div>
+              <div class="app-poll-option">
+                <div style="font-size:12px;width:130px;color:#333">Aire de jeux</div>
+                <div class="app-poll-bar-wrap"><div class="app-poll-bar" style="width:24%">24%</div></div>
+                <div class="app-poll-pct">24%</div>
+              </div>
+              <div class="app-poll-option">
+                <div style="font-size:12px;width:130px;color:#333">Pistes cyclables</div>
+                <div class="app-poll-bar-wrap"><div class="app-poll-bar" style="width:14%">14%</div></div>
+                <div class="app-poll-pct">14%</div>
+              </div>
+              <div style="font-size:10px;color:#aaa;margin-top:10px">89 votes · Se termine dans 5 jours</div>
+            </div>
+            <div class="app-poll">
+              <div class="app-poll-q">📅 Quelle heure vous convient pour le marché ?</div>
+              <div class="app-poll-option">
+                <div style="font-size:12px;width:130px;color:#333">Matin (8h–12h)</div>
+                <div class="app-poll-bar-wrap"><div class="app-poll-bar" style="width:74%">74%</div></div>
+                <div class="app-poll-pct">74%</div>
+              </div>
+              <div class="app-poll-option">
+                <div style="font-size:12px;width:130px;color:#333">Après-midi (14h–18h)</div>
+                <div class="app-poll-bar-wrap"><div class="app-poll-bar" style="width:26%">26%</div></div>
+                <div class="app-poll-pct">26%</div>
+              </div>
+              <div style="font-size:10px;color:#aaa;margin-top:10px">43 votes · Se termine dans 2 jours</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom nav -->
+        <div class="app-bottomnav">
+          <div class="app-bn-item active">
+            <div class="app-bn-icon">🏠</div>
+            <div class="app-bn-label">Accueil</div>
+            <div class="app-bn-dot"></div>
+          </div>
+          <div class="app-bn-item">
+            <div class="app-bn-icon">📅</div>
+            <div class="app-bn-label">Agenda</div>
+            <div class="app-bn-dot"></div>
+          </div>
+          <div class="app-bn-item">
+            <div class="app-bn-icon">🗳️</div>
+            <div class="app-bn-label">Sondages</div>
+            <div class="app-bn-dot"></div>
+          </div>
+          <div class="app-bn-item">
+            <div class="app-bn-icon">👤</div>
+            <div class="app-bn-label">Profil</div>
+            <div class="app-bn-dot"></div>
+          </div>
+        </div>
+
+      </div><!-- /agora-app -->
+    </div><!-- /device-frame -->
+
+  </main>
+
+</div><!-- /wrapper -->
+
+<!-- CTA Bar -->
+<div class="cta-bar">
+  <div class="cta-bar-price">
+    <div class="cta-bar-amount" id="cta-price">990 €</div>
+    <div class="cta-bar-period" id="cta-period">/ an</div>
+  </div>
+  <div class="cta-bar-sep"></div>
+  <div class="cta-bar-tier">
+    <strong id="cta-tier">📦 Offre Essentiel</strong>
+    <span id="cta-pop">Moins de 500 habitants</span>
+  </div>
+  <div class="cta-bar-spacer"></div>
+  <div class="cta-bar-includes" id="cta-includes">Plateforme + support email</div>
+  <button class="btn-cta" onclick="scrollToSubscribe()">
+    📨 Souscrire maintenant
+  </button>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// PALETTES GROUPÉES — 60 couleurs
+// ════════════════════════════════════════
+const PALETTE_GROUPS = [
+  {
+    label: 'Bleus institutionnels',
+    colors: [
+      { hex: '#0a1f44', label: 'Bleu Nuit Profond' },
+      { hex: '#1a3a6e', label: 'Bleu Marine AGORA ★' },
+      { hex: '#1e3a8a', label: 'Bleu Roi' },
+      { hex: '#1d4ed8', label: 'Bleu Vif' },
+      { hex: '#2563eb', label: 'Bleu Électrique' },
+      { hex: '#0e7490', label: 'Bleu Canard' },
+      { hex: '#164e63', label: 'Bleu Ardoise' },
+      { hex: '#1e40af', label: 'Bleu Cobalt' },
+    ]
+  },
+  {
+    label: 'Verts & nature',
+    colors: [
+      { hex: '#14532d', label: 'Vert Forêt' },
+      { hex: '#166534', label: 'Vert Sapin' },
+      { hex: '#15803d', label: 'Vert Prairie' },
+      { hex: '#1a5c4a', label: 'Vert Bouteille' },
+      { hex: '#065f46', label: 'Vert Émeraude' },
+      { hex: '#3d6b4f', label: 'Vert Campagne' },
+      { hex: '#4d7c0f', label: 'Vert Olive' },
+      { hex: '#365314', label: 'Vert Mousse' },
+    ]
+  },
+  {
+    label: 'Rouges & bordeaux',
+    colors: [
+      { hex: '#7f1d1d', label: 'Bordeaux Profond' },
+      { hex: '#991b1b', label: 'Rouge Brique' },
+      { hex: '#7b2d2d', label: 'Bordeaux Classique' },
+      { hex: '#9f1239', label: 'Carmin' },
+      { hex: '#881337', label: 'Rouge Pompéien' },
+      { hex: '#6b1a1a', label: 'Brun Rouge' },
+      { hex: '#c0392b', label: 'Rouge Vif' },
+      { hex: '#7e1e44', label: 'Pourpre' },
+    ]
+  },
+  {
+    label: 'Terres & neutres',
+    colors: [
+      { hex: '#292524', label: 'Ardoise Foncée' },
+      { hex: '#44403c', label: 'Gris Chaud' },
+      { hex: '#57534e', label: 'Silex' },
+      { hex: '#4a3728', label: 'Terre de Sienne' },
+      { hex: '#5c3a1a', label: 'Brun Chêne' },
+      { hex: '#6b4c2a', label: 'Acajou' },
+      { hex: '#78350f', label: 'Brun Ocre' },
+      { hex: '#3d2b1f', label: 'Chocolat' },
+    ]
+  },
+  {
+    label: 'Violets & mauves',
+    colors: [
+      { hex: '#4c1d95', label: 'Violet Royal' },
+      { hex: '#5b21b6', label: 'Violet Intense' },
+      { hex: '#6d28d9', label: 'Améthyste' },
+      { hex: '#581c87', label: 'Pourpre Royal' },
+      { hex: '#4a1a6e', label: 'Violet Nuit' },
+      { hex: '#3b0764', label: 'Violet Obscur' },
+      { hex: '#7c3aed', label: 'Lavande Sombre' },
+      { hex: '#6b21a8', label: 'Mauve Foncé' },
+    ]
+  },
+  {
+    label: 'Gris & contemporains',
+    colors: [
+      { hex: '#111827', label: 'Quasi-Noir' },
+      { hex: '#1f2937', label: 'Gris Anthracite' },
+      { hex: '#374151', label: 'Gris Charbon' },
+      { hex: '#1e293b', label: 'Bleu Gris' },
+      { hex: '#0f172a', label: 'Nuit Bleue' },
+      { hex: '#334155', label: 'Ardoise' },
+      { hex: '#1c1917', label: 'Terre Noire' },
+      { hex: '#171717', label: 'Noir Contemporain' },
+    ]
+  },
+];
+
+const ACCENT_COLORS = [
+  { hex: '#c9a84c', label: 'Or AGORA' },
+  { hex: '#f59e0b', label: 'Ambre' },
+  { hex: '#d97706', label: 'Bronze' },
+  { hex: '#ea580c', label: 'Terracotta' },
+  { hex: '#e8764a', label: 'Corail' },
+  { hex: '#e84a7b', label: 'Rose Vif' },
+  { hex: '#ec4899', label: 'Rose Fuchsia' },
+  { hex: '#14b8a6', label: 'Turquoise' },
+  { hex: '#06b6d4', label: 'Cyan' },
+  { hex: '#3b82f6', label: 'Bleu Ciel' },
+  { hex: '#4a9de8', label: 'Bleu Azur' },
+  { hex: '#22c55e', label: 'Vert Pomme' },
+  { hex: '#5cb85c', label: 'Vert Menthe' },
+  { hex: '#8b5cf6', label: 'Lilas' },
+  { hex: '#a78bfa', label: 'Lavande' },
+  { hex: '#f8fafc', label: 'Blanc Pur' },
+];
+
+let currentMain   = '#1a3a6e';
+let currentAccent = '#c9a84c';
+let currentMainLabel = 'Bleu Marine AGORA ★';
+let qrGenerated   = false;
+let currentView   = 'accueil';
+let features      = { actu: true, evenements: true, sondages: true, signalement: false, documents: false };
+
+// ════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  buildPalette();
+  buildAccentPalette();
+  // Init first offer card active
+  const firstCard = document.querySelector('.offer-card');
+  if (firstCard) firstCard.classList.add('active');
+  updatePreview();
+  updateQRPreview();
+  animatePollBars();
+});
+
+// ════════════════════════════════════════
+// BUILD PALETTES
+// ════════════════════════════════════════
+let activeSwatch = null;
+
+function buildPalette() {
+  const wrap = document.getElementById('palette-groups');
+  wrap.innerHTML = PALETTE_GROUPS.map(group => `
+    <div class="palette-group">
+      <div class="palette-group-label">${group.label}</div>
+      <div class="palette-row">
+        ${group.colors.map(c => `
+          <div class="palette-swatch ${c.hex === '#1a3a6e' ? 'active' : ''}"
+               style="background:${c.hex}"
+               data-hex="${c.hex}"
+               data-label="${c.label}"
+               title="${c.label}"
+               onclick="applyMainColor('${c.hex}','${c.label}',this)">
+            <div class="check-mark">✓</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  // Set initial active ref
+  activeSwatch = wrap.querySelector('.palette-swatch.active');
+}
+
+function buildAccentPalette() {
+  const wrap = document.getElementById('accent-picks');
+  wrap.innerHTML = ACCENT_COLORS.map((c, i) => `
+    <div class="accent-pill ${i === 0 ? 'active' : ''}"
+         style="background:${c.hex}"
+         title="${c.label}"
+         onclick="applyAccentColor('${c.hex}', this)">
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════
+// APPLIQUER COULEURS
+// ════════════════════════════════════════
+function applyMainColor(hex, label, el) {
+  currentMain = hex;
+  currentMainLabel = label || hex;
+  // Deselect all
+  document.querySelectorAll('.palette-swatch').forEach(s => {
+    s.classList.remove('active');
+  });
+  if (el) el.classList.add('active');
+  // Sync custom picker
+  document.getElementById('color-custom-picker').value = hex;
+  document.getElementById('color-custom-hex').value    = hex;
+  document.getElementById('palette-preview-chip').style.background = hex;
+  document.getElementById('selected-color-name').textContent = label || hex;
+  applyColors();
+}
+
+function applyCustomColor(hex) {
+  currentMain = hex;
+  currentMainLabel = hex;
+  document.getElementById('color-custom-hex').value = hex;
+  document.getElementById('palette-preview-chip').style.background = hex;
+  document.getElementById('selected-color-name').textContent = 'Couleur personnalisée';
+  document.querySelectorAll('.palette-swatch').forEach(s => s.classList.remove('active'));
+  applyColors();
+}
+
+function applyHexColor(val) {
+  if (!/^#[0-9a-fA-F]{6}$/.test(val)) return;
+  currentMain = val;
+  currentMainLabel = val;
+  document.getElementById('color-custom-picker').value = val;
+  document.getElementById('palette-preview-chip').style.background = val;
+  document.getElementById('selected-color-name').textContent = 'Couleur personnalisée';
+  document.querySelectorAll('.palette-swatch').forEach(s => s.classList.remove('active'));
+  applyColors();
+}
+
+function applyAccentColor(hex, el) {
+  currentAccent = hex;
+  document.querySelectorAll('.accent-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  applyColors();
+}
+
+function applyColors() {
+  const root = document.documentElement;
+  root.style.setProperty('--c1', currentMain);
+  root.style.setProperty('--c2', currentAccent);
+  const light = hexToRgb(currentMain);
+  if (light) {
+    const r = Math.min(255, light.r + 225);
+    const g = Math.min(255, light.g + 225);
+    const b = Math.min(255, light.b + 225);
+    root.style.setProperty('--c3', `rgb(${r},${g},${b})`);
+  }
+  // Update QR color hint
+  updateRecapPreview();
+}
+
+function hexToRgb(hex) {
+  const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return r ? { r: parseInt(r[1],16), g: parseInt(r[2],16), b: parseInt(r[3],16) } : null;
+}
+
+// ════════════════════════════════════════
+// UPDATE PREVIEW TEXTE
+// ════════════════════════════════════════
+function updatePreview() {
+  const commune = document.getElementById('cfg-commune').value || 'Votre commune';
+  const slogan  = document.getElementById('cfg-slogan').value  || 'Bienvenue sur AGORA';
+  const name    = commune.replace(/^Commune (de |d'|du |des )?/i, '');
+
+  document.getElementById('app-commune-name').textContent = name;
+  document.getElementById('hero-commune').textContent     = name;
+  document.getElementById('hero-slogan').textContent      = slogan + (slogan.endsWith('.') ? '' : '.') + ' Participez à la vie municipale, restez informés et faites entendre votre voix.';
+
+  const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  const url  = `agora.juicysolutions.fr/${slug}`;
+  document.getElementById('device-url-bar').textContent = url;
+  document.getElementById('cfg-url').value = `https://${url}`;
+  updateQRPreview();
+  updateRecapPreview();
+}
+
+// ════════════════════════════════════════
+// TOGGLES FEATURES
+// ════════════════════════════════════════
+function toggleFeature(el) {
+  el.classList.toggle('on');
+  const id = el.dataset.id;
+  features[id] = el.classList.contains('on');
+  // Show/hide nav tabs
+  const map = { signalement: 'nav-signalement', documents: 'nav-documents' };
+  if (map[id]) {
+    document.getElementById(map[id]).style.display = features[id] ? '' : 'none';
+  }
+}
+
+// ════════════════════════════════════════
+// OFFRES AGORA
+// ════════════════════════════════════════
+const OFFER_DATA = {
+  essentiel: {
+    label: '📦 Offre Essentiel',
+    price: '990 €',
+    period: '/ an',
+    includes: 'Plateforme complète + support email',
+    color: 'rgba(255,255,255,0.1)',
+    features: ['Plateforme complète', 'Support email', 'Hébergement inclus'],
+    accomp: false,
+  },
+  pro: {
+    label: '⭐ Offre Pro',
+    price: '1 490 €',
+    period: '/ an',
+    includes: 'Essentiel + accompagnement 1 mois',
+    color: 'rgba(201,168,76,0.15)',
+    features: ['Tout l\'Essentiel', 'Accompagnement 1 mois', '4 appels hebdo', 'Support 4h/semaine', 'Formation visio admin'],
+    accomp: true,
+  },
+  premium: {
+    label: '🏆 Offre Premium',
+    price: '2 490 €',
+    period: '/ an',
+    includes: 'Pro + logo/couleurs + intégration site + formation élus',
+    color: 'rgba(201,168,76,0.08)',
+    features: ['Tout le Pro', 'Logo & couleurs sur mesure', 'Intégration site web', 'Formation élus en présentiel'],
+    accomp: true,
+  },
+};
+
+let currentOffer = 'essentiel';
+
+function selectOffer(key, el) {
+  currentOffer = key;
+  const offer = OFFER_DATA[key];
+
+  // Update card states
+  document.querySelectorAll('.offer-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+
+  // Update CTA bar
+  document.getElementById('cta-price').textContent    = offer.price;
+  document.getElementById('cta-period').textContent   = offer.period;
+  document.getElementById('cta-tier').textContent     = offer.label;
+  document.getElementById('cta-includes').textContent = offer.includes;
+
+  // Update population display
+  const pop = document.getElementById('cfg-pop')?.value || '< 500 hab.';
+  document.getElementById('cta-pop').textContent = pop + ' habitants' ;
+
+  updateRecapPreview();
+}
+
+function updateTier() {
+  // kept for compatibility — now just syncs pop label
+  const pop = document.getElementById('cfg-pop')?.value || '';
+  const el  = document.getElementById('cta-pop');
+  if (el) el.textContent = pop;
+}
+
+// ════════════════════════════════════════
+// SWITCH VIEW
+// ════════════════════════════════════════
+function switchView(view, btn) {
+  currentView = view;
+  ['accueil','evenements','sondage'].forEach(v => {
+    document.getElementById('view-' + v).style.display = v === view ? '' : 'none';
+  });
+  document.querySelectorAll('.preview-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ════════════════════════════════════════
+// ANIMATE POLL BARS
+// ════════════════════════════════════════
+function animatePollBars() {
+  // Start at 0 width, animate to target
+  document.querySelectorAll('.app-poll-bar').forEach(bar => {
+    const target = bar.style.width;
+    bar.style.width = '0%';
+    setTimeout(() => { bar.style.width = target; }, 400);
+  });
+}
+
+// ════════════════════════════════════════
+// QR CODE
+// ════════════════════════════════════════
+function updateQRPreview() {
+  const url = document.getElementById('cfg-url').value;
+  document.getElementById('qr-url-display').textContent = url;
+}
+
+function generateQR() {
+  const url    = document.getElementById('cfg-url').value || 'https://agora.juicysolutions.fr';
+  const canvas = document.getElementById('qr-canvas');
+  canvas.innerHTML = '';
+
+  try {
+    new QRCode(canvas, {
+      text: url,
+      width: 84,
+      height: 84,
+      colorDark: currentMain,
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H,
+    });
+    qrGenerated = true;
+    document.getElementById('btn-dl').style.display = '';
+    showToast('📱 QR Code généré — couleur de la commune appliquée !');
+  } catch(e) {
+    canvas.innerHTML = '<span style="font-size:10px;color:#c00;padding:8px">Erreur QR</span>';
+  }
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qr-canvas canvas');
+  if (!canvas) { showToast('⚠️ Générez d\'abord le QR Code'); return; }
+  const a  = document.createElement('a');
+  const commune = document.getElementById('cfg-commune').value || 'agora';
+  a.href = canvas.toDataURL('image/png');
+  a.download = `QR-AGORA-${commune.replace(/[^a-zA-Z0-9]/g,'-')}.png`;
+  a.click();
+  showToast('⬇️ QR Code téléchargé');
+}
+
+// ════════════════════════════════════════
+// SCROLL TO SUBSCRIBE
+// ════════════════════════════════════════
+function scrollToSubscribe() {
+  const form = document.getElementById('subscribe-form');
+  if (form) {
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.style.boxShadow = '0 0 0 2px var(--agora-gold)';
+    setTimeout(() => { form.style.boxShadow = ''; }, 1500);
+  }
+}
+
+// ════════════════════════════════════════
+// RECAP PREVIEW (live)
+// ════════════════════════════════════════
+function updateRecapPreview() {
+  const recap = document.getElementById('sub-recap');
+  if (!recap) return;
+  const commune = document.getElementById('cfg-commune')?.value || '—';
+  const pop     = document.getElementById('cfg-pop')?.value     || '—';
+  const offer   = OFFER_DATA[currentOffer] || OFFER_DATA.essentiel;
+  const modules = Object.entries(features).filter(([,v]) => v).map(([k]) => ({
+    actu:'Actualités', evenements:'Événements', sondages:'Sondages', signalement:'Signalement', documents:'Documents'
+  }[k])).join(', ');
+
+  recap.classList.add('visible');
+  recap.innerHTML = `
+    <div class="sub-recap-title">📋 Récapitulatif de votre souscription</div>
+    <strong>Commune :</strong> ${commune}<br>
+    <strong>Population :</strong> ${pop}<br>
+    <strong>Offre choisie :</strong> ${offer.label} — <strong style="color:var(--agora-gold)">${offer.price} ${offer.period}</strong><br>
+    <strong>Inclus :</strong> ${offer.includes}<br>
+    <strong>Couleur principale :</strong> <span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${currentMain};vertical-align:middle;margin:0 4px"></span> ${currentMainLabel} (${currentMain})<br>
+    <strong>Couleur d'accent :</strong> <span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${currentAccent};vertical-align:middle;margin:0 4px"></span> ${currentAccent}<br>
+    <strong>Modules :</strong> ${modules || '—'}<br>
+    <strong>URL :</strong> ${document.getElementById('cfg-url')?.value || '—'}
+  `;
+}
+
+// ════════════════════════════════════════
+// ENVOYER SOUSCRIPTION (mailto structuré)
+// ════════════════════════════════════════
+function sendSubscription() {
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+
+  // Validation champs requis
+  const required = [
+    { id: 'sub-nom',      label: 'Nom du signataire' },
+    { id: 'sub-fonction', label: 'Fonction' },
+    { id: 'sub-email',    label: 'Email officiel' },
+    { id: 'sub-adresse',  label: 'Adresse de la mairie' },
+  ];
+  const missing = required.filter(f => !get(f.id));
+  if (missing.length) {
+    showToast('⚠️ Champs manquants : ' + missing.map(f => f.label).join(', '));
+    // Highlight
+    missing.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (el) { el.style.borderColor = '#f87171'; setTimeout(() => el.style.borderColor = '', 2500); }
+    });
+    return;
+  }
+
+  const commune  = get('cfg-commune') || 'Commune non renseignée';
+  const pop      = document.getElementById('cfg-pop')?.value || '—';
+  const offer    = OFFER_DATA[currentOffer] || OFFER_DATA.essentiel;
+  const url      = get('cfg-url');
+  const modules  = Object.entries(features).filter(([,v]) => v).map(([k]) => ({
+    actu:'📰 Actualités', evenements:'📅 Événements', sondages:'🗳️ Sondages', signalement:'🚧 Signalement', documents:'📄 Documents'
+  }[k])).join('\n  - ');
+
+  const today = new Date().toLocaleDateString('fr-FR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  const subject = encodeURIComponent(`[AGORA] Souscription — ${commune} — ${offer.label}`);
+
+  const accompDetail = offer.accomp ? `
+    → 4 appels hebdomadaires de suivi
+    → Support prioritaire 4h/semaine
+    → Formation visio administration incluse${currentOffer === 'premium' ? '\n    → Formation élus en présentiel\n    → Personnalisation logo/couleurs sur mesure\n    → Intégration dans le site web existant' : ''}` : '    (non inclus dans cette offre)';
+
+  const body = encodeURIComponent(`
+════════════════════════════════════════════════
+  NOUVELLE SOUSCRIPTION AGORA
+  Reçue le ${today}
+════════════════════════════════════════════════
+
+▶ COMMUNE
+  Nom : ${commune}
+  Population : ${pop}
+  Adresse : ${get('sub-adresse')}
+  SIRET : ${get('sub-siret') || 'Non renseigné'}
+  SIREN : ${get('sub-siren') || 'Non renseigné'}
+
+▶ SIGNATAIRE / CONTACT PRINCIPAL
+  Nom : ${get('sub-nom')}
+  Fonction : ${get('sub-fonction')}
+  Email : ${get('sub-email')}
+  Téléphone : ${get('sub-tel') || 'Non renseigné'}
+
+▶ RÉFÉRENT TECHNIQUE
+  Nom : ${get('sub-referent') || 'Même que signataire'}
+  Email : ${get('sub-email-tech') || get('sub-email')}
+
+▶ OFFRE SOUSCRITE
+  Offre : ${offer.label}
+  Tarif : ${offer.price} ${offer.period}
+  Inclus : ${offer.includes}
+  Démarrage souhaité : ${get('sub-demarrage') || 'Dès que possible'}
+
+▶ ACCOMPAGNEMENT 1 MOIS${accompDetail}
+
+▶ PERSONNALISATION
+  Couleur principale : ${currentMainLabel} (${currentMain})
+  Couleur d'accent : ${currentAccent}
+  URL plateforme : ${url}
+
+▶ MODULES ACTIVÉS
+  - ${modules}
+
+▶ COMMENTAIRES
+  ${get('sub-notes') || 'Aucun commentaire particulier.'}
+
+════════════════════════════════════════════════
+
+⚙️  CHECKLIST ONBOARDING — JUICY SOLUTIONS
+════════════════════════════════════════════════
+
+□ 1.  Accuser réception par email à ${get('sub-email')}
+□ 2.  Créer l'entrée commune dans Supabase (table communes)
+□ 3.  Configurer le sous-domaine : ${url}
+□ 4.  Appliquer couleurs C1=${currentMain} / C2=${currentAccent}
+□ 5.  Générer et activer la licence (table licences)
+□ 6.  Activer modules : ${Object.entries(features).filter(([,v])=>v).map(([k])=>k).join(', ')}
+□ 7.  Envoyer email de bienvenue + identifiants admin
+${offer.accomp ? `□ 8.  Planifier le 1er appel hebdomadaire de suivi
+□ 9.  Envoyer le calendrier d'accompagnement (4 semaines)
+□ 10. Planifier la formation visio admin${currentOffer === 'premium' ? '\n□ 11. Planifier formation élus en présentiel\n□ 12. Livrer la charte graphique personnalisée\n□ 13. Réaliser l\'intégration dans le site web existant' : ''}` : `□ 8.  Envoyer guide de démarrage autonome`}
+□ ${offer.accomp && currentOffer === 'premium' ? '14' : offer.accomp ? '10' : '9'}.  Envoyer devis signé + facture
+□ ${offer.accomp && currentOffer === 'premium' ? '15' : offer.accomp ? '11' : '10'}.  Archiver le dossier dans l'historique AGORA
+
+════════════════════════════════════════════════
+  Généré par le Démonstrateur AGORA — Juicy Solutions
+════════════════════════════════════════════════
+`);
+
+  const mailto = `mailto:contact@juicysolutions.fr?cc=${encodeURIComponent(get('sub-email'))}&subject=${subject}&body=${body}`;
+  window.location.href = mailto;
+
+  showToast('📨 Ouverture de votre client email — vérifiez et envoyez !');
+  updateRecapPreview();
+}
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+let toastTimer = null;
+function showToast(msg) {
+  let t = document.getElementById('app-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'app-toast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);color:white;padding:11px 22px;border-radius:30px;font-size:13px;font-weight:500;z-index:9999;transition:opacity 0.3s;font-family:Outfit,sans-serif;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.4)';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.opacity = '0'; }, 3200);
+}
+</script>
+</body>
+</html>
