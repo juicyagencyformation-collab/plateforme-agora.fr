@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGORA — Plateforme citoyenne pour votre commune</title>
+<meta name="description" content="AGORA offre à votre commune une plateforme numérique de participation citoyenne. Actualités, signalements, agenda, entraide locale. À partir de 590€/an.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --vert:#1A5C45;
+  --vert-mid:#2A8B6A;
+  --vert-light:#E8F5EF;
+  --vert-pale:#F2FAF6;
+  --bleu:#1E3A5F;
+  --bleu-mid:#2C5F8A;
+  --or:#C9A84C;
+  --or-light:#FBF3E0;
+  --gris:#F8F8F6;
+  --gris2:#EFEFEC;
+  --texte:#1A1A18;
+  --texte2:#4A4A44;
+  --texte3:#8A8A80;
+  --blanc:#FFFFFF;
+  --border:#E0E0D8;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'DM Mono',monospace;
+  --r:10px;
+  --r2:16px;
+  --shadow:0 2px 20px rgba(26,92,69,.08);
+  --shadow-lg:0 8px 40px rgba(26,92,69,.12);
+}
+
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);color:var(--texte);background:var(--blanc);line-height:1.6;overflow-x:hidden}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:0 2rem;height:64px;display:flex;align-items:center;gap:2rem}
+.nav-logo{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none}
+.nav-logo-mark{width:36px;height:36px;border-radius:8px;background:var(--vert);display:flex;align-items:center;justify-content:center}
+.nav-logo-mark svg{width:20px;height:20px}
+.nav-logo-name{font-family:var(--serif);font-size:20px;font-weight:700;color:var(--vert);letter-spacing:-.01em}
+.nav-links{display:flex;gap:1.5rem;align-items:center}
+.nav-link{font-size:14px;color:var(--texte2);text-decoration:none;font-weight:500;transition:.15s}
+.nav-link:hover{color:var(--vert)}
+.nav-cta{background:var(--vert);color:white;padding:8px 20px;border-radius:var(--r);font-size:14px;font-weight:500;text-decoration:none;transition:.15s;border:none;cursor:pointer}
+.nav-cta:hover{background:var(--vert-mid)}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;align-items:center;padding:100px 2rem 4rem;position:relative;background:linear-gradient(160deg,var(--vert-pale) 0%,var(--blanc) 60%)}
+.hero::before{content:'';position:absolute;top:0;right:0;width:50%;height:100%;background:radial-gradient(ellipse 60% 80% at 80% 40%,rgba(26,92,69,.05),transparent);pointer-events:none}
+.hero-inner{max-width:1100px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--or-light);border:1px solid rgba(201,168,76,.3);border-radius:20px;padding:6px 14px;margin-bottom:1.5rem}
+.hero-badge-dot{width:7px;height:7px;border-radius:50%;background:var(--or)}
+.hero-badge-text{font-size:12px;font-family:var(--mono);color:#8A6A1A;font-weight:500}
+.hero-title{font-family:var(--serif);font-size:52px;line-height:1.1;letter-spacing:-.02em;color:var(--bleu);margin-bottom:1.25rem;font-weight:900}
+.hero-title em{color:var(--vert);font-style:normal}
+.hero-sub{font-size:18px;color:var(--texte2);line-height:1.7;margin-bottom:2rem;font-weight:300}
+.hero-actions{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.btn-primary{background:var(--vert);color:white;padding:14px 28px;border-radius:var(--r);font-size:15px;font-weight:600;text-decoration:none;transition:.2s;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(26,92,69,.25)}
+.btn-primary:hover{background:var(--vert-mid);transform:translateY(-1px);box-shadow:0 6px 28px rgba(26,92,69,.3)}
+.btn-primary svg{width:16px;height:16px}
+.btn-secondary{color:var(--vert);padding:14px 28px;border-radius:var(--r);font-size:15px;font-weight:500;text-decoration:none;transition:.2s;border:1.5px solid var(--vert);display:inline-flex;align-items:center;gap:8px}
+.btn-secondary:hover{background:var(--vert-light)}
+.hero-trust{margin-top:2.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.hero-trust-text{font-size:13px;color:var(--texte3)}
+.hero-trust-items{display:flex;gap:.75rem;flex-wrap:wrap}
+.trust-pill{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--texte2);background:var(--gris);padding:4px 10px;border-radius:10px;border:1px solid var(--border)}
+.trust-pill svg{width:12px;height:12px;color:var(--vert)}
+
+/* HERO VISUAL */
+.hero-visual{position:relative}
+.hero-mockup{background:white;border-radius:var(--r2);box-shadow:var(--shadow-lg);border:1px solid var(--border);overflow:hidden}
+.mockup-bar{background:var(--vert);padding:.75rem 1.25rem;display:flex;align-items:center;gap:.75rem}
+.mockup-bar-dots{display:flex;gap:5px}
+.mockup-bar-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}
+.mockup-bar-url{background:rgba(255,255,255,.15);border-radius:4px;padding:4px 12px;font-size:11px;color:rgba(255,255,255,.8);font-family:var(--mono);flex:1;margin:0 .5rem}
+.mockup-content{padding:1.25rem}
+.mockup-commune-name{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--vert);margin-bottom:.75rem}
+.mockup-tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap}
+.mockup-tab{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:500;cursor:pointer;transition:.15s}
+.mockup-tab.active{background:var(--vert);color:white}
+.mockup-tab:not(.active){background:var(--gris);color:var(--texte2)}
+.mockup-cards{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.mockup-card{background:var(--gris);border-radius:var(--r);padding:.75rem;border:1px solid var(--border)}
+.mockup-card-tag{font-size:9px;font-family:var(--mono);color:var(--vert);font-weight:500;text-transform:uppercase;margin-bottom:.25rem}
+.mockup-card-title{font-size:12px;font-weight:500;color:var(--texte);line-height:1.4}
+.mockup-card-date{font-size:10px;color:var(--texte3);margin-top:.25rem}
+.mockup-badge{position:absolute;bottom:-12px;right:-12px;background:white;border:1px solid var(--border);border-radius:var(--r);padding:.625rem 1rem;box-shadow:var(--shadow);display:flex;align-items:center;gap:.5rem}
+.mockup-badge-icon{width:28px;height:28px;border-radius:6px;background:var(--vert-light);display:flex;align-items:center;justify-content:center}
+.mockup-badge-icon svg{width:15px;height:15px;color:var(--vert)}
+.mockup-badge-text{font-size:12px;font-weight:500;color:var(--texte)}
+.mockup-badge-sub{font-size:10px;color:var(--texte3)}
+
+/* ── STATS ── */
+.stats{background:var(--vert);padding:3rem 2rem}
+.stats-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;text-align:center}
+.stat-number{font-family:var(--serif);font-size:40px;font-weight:900;color:white;line-height:1}
+.stat-label{font-size:13px;color:rgba(255,255,255,.7);margin-top:.375rem}
+
+/* ── SECTION GÉNÉRIQUE ── */
+section{padding:5rem 2rem}
+.section-inner{max-width:1100px;margin:0 auto}
+.section-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:var(--mono);color:var(--vert);font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-bottom:1rem}
+.section-badge::before{content:'';width:20px;height:2px;background:var(--vert);border-radius:1px}
+.section-title{font-family:var(--serif);font-size:38px;font-weight:900;color:var(--bleu);line-height:1.15;letter-spacing:-.02em;margin-bottom:1rem}
+.section-sub{font-size:16px;color:var(--texte2);max-width:560px;line-height:1.7;font-weight:300}
+
+/* ── FONCTIONNALITÉS ── */
+.features{background:var(--gris)}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem}
+.feature-card{background:white;border-radius:var(--r2);padding:1.75rem;border:1px solid var(--border);transition:.2s;position:relative;overflow:hidden}
+.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--vert);transform:scaleX(0);transform-origin:left;transition:.3s}
+.feature-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.feature-card:hover::before{transform:scaleX(1)}
+.feature-icon{width:44px;height:44px;border-radius:10px;background:var(--vert-light);display:flex;align-items:center;justify-content:center;margin-bottom:1rem}
+.feature-icon svg{width:22px;height:22px;color:var(--vert)}
+.feature-title{font-size:16px;font-weight:600;color:var(--texte);margin-bottom:.5rem}
+.feature-desc{font-size:14px;color:var(--texte2);line-height:1.6;font-weight:300}
+
+/* ── COMMENT ÇA MARCHE ── */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;margin-top:3rem;position:relative}
+.steps::before{content:'';position:absolute;top:28px;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--border),var(--border),transparent)}
+.step{text-align:center;position:relative}
+.step-num{width:56px;height:56px;border-radius:50%;background:var(--vert);color:white;font-family:var(--serif);font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;position:relative;z-index:1;box-shadow:0 4px 16px rgba(26,92,69,.25)}
+.step-title{font-size:15px;font-weight:600;color:var(--texte);margin-bottom:.5rem}
+.step-desc{font-size:13px;color:var(--texte2);line-height:1.6;font-weight:300}
+
+/* ── TARIFS ── */
+.pricing{background:var(--gris)}
+.pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-top:3rem}
+.pricing-card{background:white;border-radius:var(--r2);padding:1.75rem;border:1px solid var(--border);transition:.2s;display:flex;flex-direction:column}
+.pricing-card.featured{border-color:var(--vert);box-shadow:0 4px 30px rgba(26,92,69,.15);position:relative}
+.pricing-card.featured::before{content:'Recommandé';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--vert);color:white;font-size:11px;font-family:var(--mono);font-weight:500;padding:3px 12px;border-radius:10px;white-space:nowrap}
+.pricing-segment{font-size:11px;font-family:var(--mono);color:var(--vert);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.pricing-pop{font-size:13px;color:var(--texte3);margin-bottom:1rem}
+.pricing-price{font-family:var(--serif);font-size:36px;font-weight:900;color:var(--bleu);line-height:1;margin-bottom:.25rem}
+.pricing-price span{font-size:16px;font-weight:400;color:var(--texte3);font-family:var(--sans)}
+.pricing-note{font-size:11px;color:var(--texte3);margin-bottom:1.25rem;font-family:var(--mono)}
+.pricing-divider{height:1px;background:var(--border);margin-bottom:1.25rem}
+.pricing-features{flex:1;display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.5rem}
+.pricing-feature{display:flex;align-items:flex-start;gap:.5rem;font-size:13px;color:var(--texte2)}
+.pricing-feature svg{width:14px;height:14px;color:var(--vert);flex-shrink:0;margin-top:2px}
+.pricing-btn{background:var(--vert-light);color:var(--vert);border:1.5px solid rgba(26,92,69,.2);border-radius:var(--r);padding:10px;font-size:14px;font-weight:600;text-align:center;cursor:pointer;transition:.15s;text-decoration:none;display:block;font-family:var(--sans)}
+.pricing-btn:hover{background:var(--vert);color:white}
+.pricing-card.featured .pricing-btn{background:var(--vert);color:white}
+.pricing-card.featured .pricing-btn:hover{background:var(--vert-mid)}
+
+/* ── GARANTIES ── */
+.guarantees-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:3rem}
+.guarantee-item{display:flex;align-items:flex-start;gap:1rem;padding:1.25rem;background:white;border-radius:var(--r2);border:1px solid var(--border)}
+.guarantee-icon{width:36px;height:36px;border-radius:8px;background:var(--vert-light);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.guarantee-icon svg{width:18px;height:18px;color:var(--vert)}
+.guarantee-title{font-size:14px;font-weight:600;color:var(--texte);margin-bottom:.25rem}
+.guarantee-desc{font-size:13px;color:var(--texte2);line-height:1.5;font-weight:300}
+
+/* ── CTA FINAL ── */
+.cta-section{background:linear-gradient(135deg,var(--vert) 0%,var(--bleu) 100%);padding:5rem 2rem;text-align:center;position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 60% at 30% 50%,rgba(255,255,255,.06),transparent)}
+.cta-title{font-family:var(--serif);font-size:42px;font-weight:900;color:white;line-height:1.15;letter-spacing:-.02em;margin-bottom:1rem}
+.cta-sub{font-size:16px;color:rgba(255,255,255,.75);margin-bottom:2.5rem;font-weight:300}
+.cta-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-white{background:white;color:var(--vert);padding:14px 28px;border-radius:var(--r);font-size:15px;font-weight:600;text-decoration:none;transition:.2s;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.btn-white:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(0,0,0,.25)}
+.btn-outline-white{color:white;padding:14px 28px;border-radius:var(--r);font-size:15px;font-weight:500;text-decoration:none;transition:.2s;border:1.5px solid rgba(255,255,255,.4);display:inline-flex;align-items:center;gap:8px}
+.btn-outline-white:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.6)}
+
+/* ── FOOTER ── */
+footer{background:var(--texte);padding:3rem 2rem;color:rgba(255,255,255,.6)}
+.footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem}
+.footer-brand-name{font-family:var(--serif);font-size:22px;font-weight:700;color:white;margin-bottom:.5rem}
+.footer-brand-desc{font-size:13px;line-height:1.6;margin-bottom:1rem}
+.footer-siret{font-size:11px;font-family:var(--mono);color:rgba(255,255,255,.3)}
+.footer-col-title{font-size:12px;font-family:var(--mono);font-weight:500;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.875rem}
+.footer-links{display:flex;flex-direction:column;gap:.5rem}
+.footer-link{font-size:13px;color:rgba(255,255,255,.5);text-decoration:none;transition:.12s}
+.footer-link:hover{color:white}
+.footer-bottom{max-width:1100px;margin:2rem auto 0;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;font-size:12px;color:rgba(255,255,255,.3)}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.hero-badge{animation:fadeIn .6s ease both}
+.hero-title{animation:fadeUp .7s ease .1s both}
+.hero-sub{animation:fadeUp .7s ease .2s both}
+.hero-actions{animation:fadeUp .7s ease .3s both}
+.hero-trust{animation:fadeUp .7s ease .4s both}
+.hero-visual{animation:fadeUp .8s ease .2s both}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;text-align:center}
+  .hero-visual{display:none}
+  .hero-actions{justify-content:center}
+  .hero-trust{justify-content:center}
+  .stats-inner{grid-template-columns:repeat(2,1fr)}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .steps::before{display:none}
+  .pricing-grid{grid-template-columns:1fr 1fr}
+  .guarantees-grid{grid-template-columns:1fr}
+  .footer-inner{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+}
+@media(max-width:600px){
+  .hero-title{font-size:36px}
+  .section-title{font-size:28px}
+  .pricing-grid{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div style="width:36px;height:36px;flex-shrink:0">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2196F3"/>
+            <stop offset="100%" style="stop-color:#00BFA5"/>
+          </linearGradient>
+        </defs>
+        <polygon points="50,2 95,26 95,74 50,98 5,74 5,26" fill="#0D1B3E" stroke="url(#hg)" stroke-width="4"/>
+        <polygon points="50,12 85,31 85,69 50,88 15,69 15,31" fill="none" stroke="white" stroke-width="2"/>
+        <text x="28" y="68" font-family="serif" font-size="36" font-weight="bold" fill="white">A</text>
+        <text x="50" y="68" font-family="serif" font-size="32" font-weight="bold" fill="#00BFA5">G</text>
+        <rect x="28" y="72" width="44" height="6" rx="3" fill="#00BFA5"/>
+      </svg>
+    </div>
+    <span class="nav-logo-name" style="color:#0D1B3E;font-family:var(--serif)">AGORA</span>
+  </a>
+  <div class="nav-links">
+    <a href="#fonctionnalites" class="nav-link">Fonctionnalités</a>
+    <a href="#comment" class="nav-link">Comment ça marche</a>
+    <a href="#tarifs" class="nav-link">Tarifs</a>
+    <a href="#contact" class="nav-link">Contact</a>
+  </div>
+  <a href="mailto:juicy.agency.formation@gmail.com?subject=Demande AGORA" class="nav-cta">Demander une démo</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge">
+        <div class="hero-badge-dot"></div>
+        <span class="hero-badge-text">Conçu pour les communes françaises</span>
+      </div>
+      <h1 class="hero-title">La plateforme<br>citoyenne de<br><em>votre commune</em></h1>
+      <p class="hero-sub">Offrez à vos administrés un espace numérique de proximité. Actualités, agenda, signalements, entraide locale. Opérationnel en 48h, sans compétence technique.</p>
+      <div class="hero-actions">
+        <a href="mailto:juicy.agency.formation@gmail.com?subject=Demande démo AGORA" class="btn-primary">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5M2 4h12v9H2V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          Demander une démo gratuite
+        </a>
+        <a href="#tarifs" class="btn-secondary">Voir les tarifs →</a>
+      </div>
+      <div class="hero-trust">
+        <span class="hero-trust-text">Inclus :</span>
+        <div class="hero-trust-items">
+          <span class="trust-pill"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Données hébergées en France</span>
+          <span class="trust-pill"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Mises à jour incluses</span>
+          <span class="trust-pill"><svg viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Sans engagement d'un an</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-mockup" style="border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(13,27,62,.18);border:1px solid #E0E0D8;background:#F5F0E8;display:flex;max-height:480px">
+
+        <!-- SIDEBAR -->
+        <div style="width:180px;min-width:180px;background:#F5F0E8;border-right:1px solid #E0D8C8;padding:12px 0;display:flex;flex-direction:column;gap:2px">
+          <!-- Logo -->
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px 16px">
+            <svg viewBox="0 0 100 100" width="28" height="28">
+              <defs><linearGradient id="hg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#2196F3"/><stop offset="100%" style="stop-color:#00BFA5"/></linearGradient></defs>
+              <polygon points="50,2 95,26 95,74 50,98 5,74 5,26" fill="#0D1B3E" stroke="url(#hg2)" stroke-width="4"/>
+              <text x="26" y="68" font-family="serif" font-size="38" font-weight="bold" fill="white">A</text>
+              <text x="50" y="68" font-family="serif" font-size="34" font-weight="bold" fill="#00BFA5">G</text>
+              <rect x="26" y="72" width="46" height="6" rx="3" fill="#00BFA5"/>
+            </svg>
+            <div>
+              <div style="font-family:serif;font-size:13px;font-weight:700;color:#1E3A5F;letter-spacing:.02em">AGORA</div>
+              <div style="font-size:9px;color:#8A7A5A;font-style:italic">Doullens</div>
+            </div>
+          </div>
+
+          <!-- Profil -->
+          <div style="background:white;border-radius:8px;margin:0 8px 8px;padding:10px;border:1px solid #E0D8C8">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <div style="width:24px;height:24px;border-radius:50%;background:#2C5F6E;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white">MA</div>
+              <div>
+                <div style="font-size:10px;font-weight:600;color:#1A1A18">Marie</div>
+                <div style="font-size:8px;color:#8A7A5A">@marie_d</div>
+              </div>
+            </div>
+            <div style="background:#F5F0E8;border-radius:10px;padding:2px 6px;display:inline-flex;align-items:center;gap:4px;margin-bottom:6px">
+              <div style="width:5px;height:5px;border-radius:50%;background:#2C5F6E"></div>
+              <span style="font-size:8px;color:#2C5F6E;font-weight:500">Riverain</span>
+            </div>
+            <div style="height:4px;background:#E0D8C8;border-radius:2px;overflow:hidden">
+              <div style="height:4px;width:78%;background:linear-gradient(90deg,#2C5F6E,#C9A84C);border-radius:2px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px">
+              <span style="font-size:8px;color:#8A7A5A">78 XP</span>
+              <span style="font-size:8px;color:#8A7A5A">100 XP</span>
+            </div>
+          </div>
+
+          <!-- Menu -->
+          <div style="background:#E8F0E8;border-radius:6px;margin:0 8px;padding:6px 10px;display:flex;align-items:center;gap:6px">
+            <span style="font-size:13px">🏠</span>
+            <span style="font-size:10px;font-weight:600;color:#1A1A18">Accueil</span>
+          </div>
+          <div style="padding:5px 18px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px">🌡️</span><span style="font-size:10px;color:#4A4A44">Thermomètre</span></div>
+            <span style="font-size:8px;background:#E8E8E0;padding:1px 4px;border-radius:4px;color:#6A6A60">VOTE</span>
+          </div>
+          <div style="padding:5px 18px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px">💬</span><span style="font-size:10px;color:#4A4A44">Mur des Voisins</span></div>
+            <span style="font-size:8px;background:#FFE8E8;padding:1px 4px;border-radius:4px;color:#C04040">LIVE</span>
+          </div>
+          <div style="padding:5px 18px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:6px"><span style="font-size:12px">🔔</span><span style="font-size:10px;color:#4A4A44">Alertes</span></div>
+            <span style="font-size:8px;background:#E8F5EF;padding:1px 4px;border-radius:4px;color:#1A5C45">+15 XP</span>
+          </div>
+          <div style="padding:5px 18px;display:flex;align-items:center;gap:6px"><span style="font-size:12px">📅</span><span style="font-size:10px;color:#4A4A44">Agenda</span></div>
+          <div style="padding:5px 18px;display:flex;align-items:center;gap:6px"><span style="font-size:12px">🤝</span><span style="font-size:10px;color:#4A4A44">Coup de Main</span></div>
+          <div style="padding:5px 18px;display:flex;align-items:center;gap:6px"><span style="font-size:12px">🗺️</span><span style="font-size:10px;color:#4A4A44">Chasse au Trésor</span></div>
+        </div>
+
+        <!-- MAIN -->
+        <div style="flex:1;overflow:hidden;background:white">
+          <!-- Header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F0EAE0">
+            <div style="font-family:serif;font-size:16px;font-weight:700;color:#1E3A5F">Accueil</div>
+            <div style="background:#1E3A5F;border-radius:20px;padding:4px 10px;display:flex;align-items:center;gap:4px">
+              <span style="font-size:10px">⭐</span>
+              <span style="font-size:10px;color:white;font-weight:500">78 XP</span>
+            </div>
+          </div>
+
+          <!-- Welcome card -->
+          <div style="margin:12px;border-radius:10px;background:linear-gradient(135deg,#2C5F6E,#1E3A5F);padding:14px 16px">
+            <div style="font-size:8px;letter-spacing:.1em;color:rgba(255,255,255,.6);text-transform:uppercase;margin-bottom:4px">Bienvenue</div>
+            <div style="font-family:serif;font-size:20px;font-weight:700;color:white;line-height:1.1">Marie</div>
+            <div style="font-family:serif;font-size:13px;color:#C9A84C;font-style:italic;margin-bottom:8px">Riverain</div>
+            <div style="height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden">
+              <div style="height:4px;width:78%;background:linear-gradient(90deg,#4AADBD,#C9A84C);border-radius:2px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:3px">
+              <span style="font-size:8px;color:rgba(255,255,255,.5)">78 XP</span>
+              <span style="font-size:8px;color:rgba(255,255,255,.5)">100 XP</span>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:0 12px 12px">
+            <div style="background:#F8F8F6;border-radius:8px;padding:8px;text-align:center;border:1px solid #EEEEE8">
+              <div style="font-size:14px">🔔</div>
+              <div style="font-family:serif;font-size:14px;font-weight:700;color:#1E3A5F">1</div>
+              <div style="font-size:7px;color:#8A8A80;letter-spacing:.05em;text-transform:uppercase">Signalements</div>
+            </div>
+            <div style="background:#F8F8F6;border-radius:8px;padding:8px;text-align:center;border:1px solid #EEEEE8">
+              <div style="font-size:14px">⚖️</div>
+              <div style="font-family:serif;font-size:14px;font-weight:700;color:#1E3A5F">1</div>
+              <div style="font-size:7px;color:#8A8A80;letter-spacing:.05em;text-transform:uppercase">Votes</div>
+            </div>
+            <div style="background:#F8F8F6;border-radius:8px;padding:8px;text-align:center;border:1px solid #EEEEE8">
+              <div style="font-size:14px">🤝</div>
+              <div style="font-family:serif;font-size:14px;font-weight:700;color:#1E3A5F">3</div>
+              <div style="font-size:7px;color:#8A8A80;letter-spacing:.05em;text-transform:uppercase">Contributions</div>
+            </div>
+          </div>
+
+          <!-- Quêtes -->
+          <div style="margin:0 12px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <div style="width:16px;height:1px;background:#C9A84C"></div>
+              <span style="font-size:7px;letter-spacing:.1em;color:#C9A84C;text-transform:uppercase;font-weight:600">Quêtes actives</span>
+            </div>
+            <div style="font-family:serif;font-size:12px;font-weight:700;color:#1E3A5F;margin-bottom:8px">Votre progression</div>
+            <div style="background:#F8F8F6;border-radius:6px;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;border:1px solid #EEEEE8">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:11px">🔔</span>
+                <div>
+                  <div style="font-size:9px;font-weight:500;color:#8A8A80;text-decoration:line-through">Premier signalement</div>
+                  <div style="font-size:8px;color:#8A8A80">Soumettez votre 1er signalement</div>
+                </div>
+              </div>
+              <div style="background:#E8F5EF;border-radius:4px;padding:2px 6px;font-size:7px;font-weight:600;color:#1A5C45">✓ FAIT</div>
+            </div>
+            <div style="background:#F8F8F6;border-radius:6px;padding:7px 10px;display:flex;align-items:center;justify-content:space-between;border:1px solid #EEEEE8">
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-size:11px">⚖️</span>
+                <div>
+                  <div style="font-size:9px;font-weight:500;color:#1A1A18">Voix citoyenne</div>
+                  <div style="font-size:8px;color:#8A8A80">Votez sur 2 projets</div>
+                </div>
+              </div>
+              <div style="font-size:8px;font-weight:600;color:#C9A84C">+20 XP</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="mockup-badge">
+        <div class="mockup-badge-icon"><svg viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 7.5l2 2 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></div>
+        <div>
+          <div class="mockup-badge-text">Opérationnel en 48h</div>
+          <div class="mockup-badge-sub">Sans compétence technique</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-inner">
+    <div><div class="stat-number">771</div><div class="stat-label">communes dans la Somme</div></div>
+    <div><div class="stat-number">48h</div><div class="stat-label">délai de mise en service</div></div>
+    <div><div class="stat-number">590€</div><div class="stat-label">par an pour une petite commune</div></div>
+    <div><div class="stat-number">100%</div><div class="stat-label">données hébergées en UE</div></div>
+  </div>
+</div>
+
+<!-- FONCTIONNALITÉS -->
+<section class="features" id="fonctionnalites">
+  <div class="section-inner">
+    <div class="section-badge">Fonctionnalités</div>
+    <h2 class="section-title">Tout ce dont votre<br>commune a besoin</h2>
+    <p class="section-sub">Une plateforme complète, pensée pour la réalité des petites et moyennes communes françaises.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M3 5h16M3 10h16M3 15h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div class="feature-title">Actualités municipales</div>
+        <div class="feature-desc">Publiez vos informations et décisions en quelques clics. Vos administrés sont informés en temps réel.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><rect x="3" y="4" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 2v4M15 2v4M3 9h16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div class="feature-title">Agenda communal</div>
+        <div class="feature-desc">Conseils municipaux, événements locaux, permanences. Tout le calendrier de la vie communale en un seul endroit.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M11 3a8 8 0 1 0 0 16A8 8 0 0 0 11 3z" stroke="currentColor" stroke-width="1.5"/><path d="M11 7v5l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div class="feature-title">Signalements citoyens</div>
+        <div class="feature-desc">Vos administrés signalent les problèmes du quotidien. Vous gérez et suivez chaque signalement depuis votre tableau de bord.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M4 12c0-3.87 3.13-7 7-7s7 3.13 7 7M4 12c0 3.87 3.13 7 7 7" stroke="currentColor" stroke-width="1.5"/><circle cx="11" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/></svg></div>
+        <div class="feature-title">Bourse d'entraide</div>
+        <div class="feature-desc">Covoiturage, services, dons, échanges. Renforcez le lien social et la solidarité entre habitants.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M9 11l2 2 4-4M3 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+        <div class="feature-title">Participation citoyenne</div>
+        <div class="feature-desc">Consultez vos administrés sur les projets locaux. Sondages, votes et discussions pour une démocratie locale vivante.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 22 22" fill="none"><path d="M11 3L2 8l9 5 9-5-9-5zM2 14l9 5 9-5M2 11l9 5 9-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+        <div class="feature-title">Tableau de bord mairie</div>
+        <div class="feature-desc">Interface dédiée au secrétariat de mairie. Gérez les contenus, modérez les signalements, suivez l'activité.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMENT ÇA MARCHE -->
+<section id="comment">
+  <div class="section-inner">
+    <div class="section-badge">Mise en service</div>
+    <h2 class="section-title">Opérationnel en 48 heures</h2>
+    <p class="section-sub">Nous gérons toute la partie technique. Vous vous concentrez sur votre commune.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Vous nous contactez</div>
+        <div class="step-desc">Un échange de 20 minutes pour comprendre vos besoins et choisir la formule adaptée à votre commune.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">On configure votre espace</div>
+        <div class="step-desc">Nous créons votre plateforme personnalisée aux couleurs de votre commune. Vous validez avant la mise en ligne.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Vous recevez votre lien</div>
+        <div class="step-desc">Votre URL unique est prête. Vous la partagez sur votre site, vos réseaux et vos affichages officiels.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Vos citoyens participent</div>
+        <div class="step-desc">Vos administrés créent leur compte et participent à la vie communale depuis leur téléphone ou ordinateur.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TARIFS -->
+<section class="pricing" id="tarifs">
+  <div class="section-inner">
+    <div class="section-badge">Tarifs</div>
+    <h2 class="section-title">Des tarifs adaptés à<br>chaque commune</h2>
+    <p class="section-sub">Paiement annuel par virement. Facturation conforme aux exigences des collectivités. TVA non applicable.</p>
+    <div class="pricing-grid">
+
+      <div class="pricing-card">
+        <div class="pricing-segment">Hameau</div>
+        <div class="pricing-pop">Moins de 500 habitants</div>
+        <div class="pricing-price">590<span>€ / an</span></div>
+        <div class="pricing-note">TVA non applicable — art. 293 B CGI</div>
+        <div class="pricing-divider"></div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Toutes les fonctionnalités</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Mises à jour incluses</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Support par email</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Données hébergées en UE</div>
+        </div>
+        <a href="mailto:juicy.agency.formation@gmail.com?subject=Demande AGORA Hameau" class="pricing-btn">Nous contacter</a>
+      </div>
+
+      <div class="pricing-card featured">
+        <div class="pricing-segment">Village</div>
+        <div class="pricing-pop">500 à 2 000 habitants</div>
+        <div class="pricing-price">990<span>€ / an</span></div>
+        <div class="pricing-note">TVA non applicable — art. 293 B CGI</div>
+        <div class="pricing-divider"></div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Toutes les fonctionnalités</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Mises à jour incluses</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Support prioritaire</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Formation secrétariat incluse</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Données hébergées en UE</div>
+        </div>
+        <a href="mailto:juicy.agency.formation@gmail.com?subject=Demande AGORA Village" class="pricing-btn">Nous contacter</a>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-segment">Bourg</div>
+        <div class="pricing-pop">2 000 à 5 000 habitants</div>
+        <div class="pricing-price">1790<span>€ / an</span></div>
+        <div class="pricing-note">TVA non applicable — art. 293 B CGI</div>
+        <div class="pricing-divider"></div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Toutes les fonctionnalités</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Mises à jour incluses</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Support téléphonique</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Formation sur site incluse</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Personnalisation avancée</div>
+        </div>
+        <a href="mailto:juicy.agency.formation@gmail.com?subject=Demande AGORA Bourg" class="pricing-btn">Nous contacter</a>
+      </div>
+
+      <div class="pricing-card">
+        <div class="pricing-segment">Ville</div>
+        <div class="pricing-pop">Plus de 5 000 habitants</div>
+        <div class="pricing-price" style="font-size:24px;padding-top:.5rem">Sur devis</div>
+        <div class="pricing-note">Tarif personnalisé selon vos besoins</div>
+        <div class="pricing-divider"></div>
+        <div class="pricing-features">
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Solution sur mesure</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Intégrations spécifiques</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>SLA garanti</div>
+          <div class="pricing-feature"><svg viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>Accompagnement dédié</div>
+        </div>
+        <a href="mailto:juicy.agency.formation@gmail.com?subject=Demande AGORA Ville" class="pricing-btn">Nous contacter</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- GARANTIES -->
+<section>
+  <div class="section-inner">
+    <div class="section-badge">Nos engagements</div>
+    <h2 class="section-title">Conçu pour les collectivités</h2>
+    <p class="section-sub">AGORA respecte les exigences légales et techniques propres aux collectivités territoriales françaises.</p>
+    <div class="guarantees-grid">
+      <div class="guarantee-item">
+        <div class="guarantee-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M9 2L3 5v4c0 3.5 2.5 5.5 6 6.5 3.5-1 6-3 6-6.5V5L9 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+        <div><div class="guarantee-title">Données hébergées en Europe</div><div class="guarantee-desc">Toutes vos données et celles de vos administrés sont hébergées exclusivement sur des serveurs européens. Conformité RGPD garantie.</div></div>
+      </div>
+      <div class="guarantee-item">
+        <div class="guarantee-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M3 5h12M3 8.5h12M3 12h7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+        <div><div class="guarantee-title">Facturation collectivité</div><div class="guarantee-desc">Paiement par virement bancaire ou bon de commande. Factures conformes aux exigences de la comptabilité publique.</div></div>
+      </div>
+      <div class="guarantee-item">
+        <div class="guarantee-icon"><svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.3"/><path d="M6 9l2 2 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+        <div><div class="guarantee-title">Vos données restent les vôtres</div><div class="guarantee-desc">Export de vos données à tout moment. En cas de résiliation, vous récupérez l'intégralité de vos données dans les 30 jours.</div></div>
+      </div>
+      <div class="guarantee-item">
+        <div class="guarantee-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.2 4.2l1.4 1.4M12.4 12.4l1.4 1.4M4.2 13.8l1.4-1.4M12.4 5.6l1.4-1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+        <div><div class="guarantee-title">Disponible 24h/24</div><div class="guarantee-desc">Votre plateforme est accessible en permanence. Les mises à jour sont déployées automatiquement, sans interruption de service.</div></div>
+      </div>
+      <div class="guarantee-item">
+        <div class="guarantee-icon"><svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="7" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M3 16c0-3.31 2.69-6 6-6s6 2.69 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></div>
+        <div><div class="guarantee-title">Support humain</div><div class="guarantee-desc">Un interlocuteur unique, basé en France, qui connaît les réalités des communes rurales. Réponse garantie sous 48h ouvrées.</div></div>
+      </div>
+      <div class="guarantee-item">
+        <div class="guarantee-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M9 1l2 6h6l-5 3.5 2 6L9 13l-5 3.5 2-6L1 7h6L9 1z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+        <div><div class="guarantee-title">Sans engagement technique</div><div class="guarantee-desc">Aucune compétence informatique requise. Votre secrétariat prend en main l'outil en moins d'une heure.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-section" id="contact">
+  <div class="section-inner">
+    <h2 class="cta-title">Prêt à moderniser<br>votre commune ?</h2>
+    <p class="cta-sub">Un échange de 20 minutes suffit. Nous vous montrons la plateforme en live,<br>adaptée aux couleurs de votre commune.</p>
+    <div class="cta-actions">
+      <a href="mailto:juicy.agency.formation@gmail.com?subject=Demande démo AGORA&body=Bonjour,%0A%0AJe souhaite en savoir plus sur AGORA pour ma commune.%0A%0ANom de la commune :%0ANombre d'habitants approximatif :%0A%0ACordialement" class="btn-white">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5M2 4h12v9H2V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        Demander une démo gratuite
+      </a>
+      <a href="tel:+33322000000" class="btn-outline-white">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3h3l1.5 3.5-2 1.5c1 2 2 3 4 4l1.5-2L14.5 11V14c-7 1-13-5-11.5-11z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        Nous appeler
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand-name">AGORA</div>
+      <div class="footer-brand-desc">Plateforme citoyenne SaaS pour les communes françaises. Conçu et hébergé en France.</div>
+      <div class="footer-siret">Juicy Solutions · Léandre Sallé · SIRET 882 992 472<br>10 rue du Pont · 80580 Eaucourt-sur-Somme<br>TVA non applicable — art. 293 B CGI</div>
+    </div>
+    <div>
+      <div class="footer-col-title">Produit</div>
+      <div class="footer-links">
+        <a href="#fonctionnalites" class="footer-link">Fonctionnalités</a>
+        <a href="#tarifs" class="footer-link">Tarifs</a>
+        <a href="#comment" class="footer-link">Comment ça marche</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Légal</div>
+      <div class="footer-links">
+        <a href="#" class="footer-link">CGV</a>
+        <a href="#" class="footer-link">Politique de confidentialité</a>
+        <a href="#" class="footer-link">Mentions légales</a>
+        <a href="#" class="footer-link">RGPD</a>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Contact</div>
+      <div class="footer-links">
+        <a href="mailto:juicy.agency.formation@gmail.com" class="footer-link">juicy.agency.formation@gmail.com</a>
+        <a href="#contact" class="footer-link">Demander une démo</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Juicy Solutions — Léandre Sallé. Tous droits réservés.</span>
+    <span>plateforme-agora.fr</span>
+  </div>
+</footer>
+
+</body>
+</html>
